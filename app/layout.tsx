@@ -6,7 +6,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata = {
-  metadataBase: new URL("https:://playskillsphere.com"),
+  metadataBase: new URL("https://playskillsphere.com"),
   title: "playskillsphere",
   description: "A fun way to play games with your friends!",
 };
