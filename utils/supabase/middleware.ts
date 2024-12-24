@@ -40,13 +40,10 @@ export const updateSession = async (request: NextRequest) => {
     if(request.nextUrl.pathname === "/" && !user.error) {
         return NextResponse.redirect(new URL("/protected", request.url));
     }
+    // if user is not signed in, forward them to the sign-in page
     if(request.nextUrl.pathname === "/") {
-        return NextResponse.redirect(new URL("/about", request.url));
+        return NextResponse.redirect(new URL("/sign-in", request.url));
     }
-	// if user is not signed in, forward them to the sign-in page
-	if (user.error && request.nextUrl.pathname.startsWith("/protected")) {
-		return NextResponse.redirect(new URL("/sign-in", request.url));
-	}
 
 	return response;
 };
