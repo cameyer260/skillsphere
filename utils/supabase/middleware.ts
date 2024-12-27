@@ -38,7 +38,7 @@ export const updateSession = async (request: NextRequest) => {
 
     // "/" page doesn't exist, forwards them to protected if signed in, about if not signed-in
     if(request.nextUrl.pathname === "/" && !user.error) {
-        return NextResponse.redirect(new URL("/protected", request.url));
+        return NextResponse.redirect(new URL("/protected/home", request.url));
     }
     // if user is not signed in, forward them to the sign-in page
     if(request.nextUrl.pathname === "/") {
