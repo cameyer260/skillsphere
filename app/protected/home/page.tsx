@@ -1,56 +1,20 @@
+"use client"
+
 import Link from "next/link";
 import Image from "next/image";
+import FriendsSidebar from "@/components/ui/friends-sidebar";
 
 export default function Home() {
+
 	return (
 		<div>
 			<div className="flex flex-row w-full">
-				<div className="w-3/12 border-r border-r-foreground/30 flex flex-col text-xl px-2 [&>a]:border-b [&>a]:border-b-foreground/10 [&>a]:py-2">
-					<h1 className="text-3xl border-b border-b-foreground/30 py-2">
-						Friends
-					</h1>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-					<Link href={"/DNE"}>catalina</Link>
-					<Link href={"/DNE"}>christopher</Link>
-					<Link href={"/DNE"}>leon</Link>
-					<Link href={"/DNE"}>paola</Link>
-				</div>
+                <FriendsSidebar />
 				<div className="w-9/12 px-2 text-xl">
 					<h1 className="text-3xl border-b border-b-foreground/30 py-2">
 						Top Games
 					</h1>
-					<div className="m-2 grid grid-cols-4 gap-4 p-4 [&>div]:text-center [&>div]:border [&>div]:rounded-lg [&>div]:border-current [&>div]:py-2">
+					<div className="m-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 [&>div]:text-center [&>div]:border [&>div]:rounded-lg [&>div]:border-current [&>div]:py-2">
 						<div>
 							<Link href={"/protected/play/chess"}>
 								<Image
