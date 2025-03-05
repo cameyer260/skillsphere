@@ -2,6 +2,7 @@ import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { GeistSans } from "geist/font/sans";
 import { ThemeProvider } from "next-themes";
+import { Analytics } from "@vercel/analytics/react"
 import Link from "next/link";
 import "./globals.css";
 
@@ -48,6 +49,7 @@ export default function RootLayout({
 							</nav>
 							<div>
 								{children}
+                                <Analytics />
 							</div>
 						</div>
 					</main>
