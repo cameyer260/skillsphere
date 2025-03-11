@@ -14,9 +14,11 @@ export type Player = BoardValues.X | BoardValues.O;
 export default function Board({
 	handleWin,
 	resetB,
+    isLightMode,
 }: {
 	handleWin: (val: BoardValues) => void;
 	resetB: boolean;
+    isLightMode: boolean;
 }) {
 	const [turn, setTurn] = useState<Player>(BoardValues.X);
 	const [board, setBoard] = useState([
@@ -133,6 +135,7 @@ export default function Board({
 											: BoardValues.X
 									);
 								}}
+                                isLightMode={isLightMode}
 							/>
 						))}
 					</Fragment>
