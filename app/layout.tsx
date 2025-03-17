@@ -24,6 +24,9 @@ export default function RootLayout({
 			className={GeistSans.className}
 			suppressHydrationWarning
 		>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            </head>
 			<body className="bg-background text-foreground min-h-screen">
 				<ThemeProvider
 					attribute="class"
