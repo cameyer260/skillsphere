@@ -103,7 +103,10 @@ export default function Pong() {
                                 <p>Local play only. W/S control the left paddle, arrow up/arrow down control the right paddle.</p>
 								<button
 									className={`text-2xl border-2 ${lightMode ? "border-black" : "border-white"} rounded-lg px-2`}
-                                    onClick={() => setStartGame(false)}
+                                    onClick={() => {
+                                        setStartGame(false);
+                                        resetGame();
+                                    }}
 								>
 									Play
 								</button>

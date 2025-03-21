@@ -19,8 +19,8 @@ export default class Paddle {
         }
 
         this.width = 0.02 * canvas.width;
-        this.height = 0.3 * canvas.height;
-        this.speed = 5;
+        this.height = 0.25 * canvas.height;
+        this.speed = 6;
 
         this.x = side === "left" ? this.width : canvas.width - this.width * 2;
         this.y = (canvas.height / 2) - (this.height / 2);
@@ -58,13 +58,15 @@ export default class Paddle {
                     ball.x + ball.radius >= this.x &&
                     ball.x + ball.radius <= this.x + this.width
                 ) {
+                    // increase speed with each hit
+                    ball.maxVelocity += .5;
+                    ball.xVelocity = ball.maxVelocity * -1;
+
                     const midpoint = this.y + (this.height / 2);
                     const differenceInY = ball.y - midpoint;
                     const reductionFactor = (this.height / 2) /
                         ball.maxVelocity;
                     ball.yVelocity = differenceInY / reductionFactor;
-
-                    ball.xVelocity *= -1;
                 }
             } else {
                 // Left paddle case
@@ -72,13 +74,15 @@ export default class Paddle {
                     ball.x - ball.radius <= this.x + this.width &&
                     ball.x - ball.radius >= this.x
                 ) {
+                    // increase speed with each hit
+                    ball.maxVelocity += .5;
+                    ball.xVelocity = ball.maxVelocity;
+
                     const midpoint = this.y + (this.height / 2);
                     const differenceInY = ball.y - midpoint;
                     const reductionFactor = (this.height / 2) /
                         ball.maxVelocity;
                     ball.yVelocity = differenceInY / reductionFactor;
-
-                    ball.xVelocity *= -1;
                 }
             }
             return;
