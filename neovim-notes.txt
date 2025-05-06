@@ -1,0 +1,33 @@
+SHORTCUTS
+
+- / -> search text within current buffer
+- [TAB] -> move through buffers
+- [SPACE] + ff -> open find files within directory
+- [SPACE] + fb -> open find files within buffers
+- [SPACE] + x -> close current buffer
+- [SPACE] + e -> open filetree sidebar
+- [SPACE] + t + h -> open theme selection 
+- (when navigating files sidebar using [SPACE] + e) a -> create file then name it whatever you type
+- (when navigating files sidebar using [SPACE] + e) r -> rename file hovered over
+- (when navigating files sidebar using [SPACE] + e) c/p -> copy/paste files (copy file hovered over, paste to location hovered over)
+- (when navigating files sidebar using [SPACE] + e) d -> delete file hovered over (press y after d for yes to delete)
+- (when navigating files sidebar using [SPACE] + e) - -> go up within the tree (to the parent directory)
+- (when navigating files sidebar using [SPACE] + e) m -> mark file hovered over (puts red marker to the left of it
+- :vsp -> split terminal vertically 
+- :sp -> split terminal horizontally
+- (to navigate through these split terminals, you combine the control key with h, j, k, l just like navigating a file in vim)
+- [SPACE] + c + h -> access cheatsheet
+- [CTRL] + n -> toggle file tree open/close
+- [SPACE] + h -> open horizontal terminal
+- [SPACE] + v -> open vertical terminal
+- :wa -> save all open files
+
+- :term -> enter terminal
+- (after :term) i -> enter insert mode in terminals
+- (once in insert mode in terminal) [CTRL] + \ + [CTRL] + n -> exit insert mode in terminal
+
+- :[CTRL] + hjkl -> move between buffers, terminals, tree sidebar
+
+- (to indent block of code, first highlight it in visual mode, then hit) > (or) < -> indent block of code
+
+- [CMD] + [SHIFT] + r -> to hard refresh browser (refresh caches like css styling) 
