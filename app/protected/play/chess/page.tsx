@@ -1,6 +1,6 @@
 "use client"
 
-import Board from "@/components/ui/games/chess/game-board"
+import Board from "@/components/ui/games/chess/game-board";
 
 export default function Chess() {
     return (

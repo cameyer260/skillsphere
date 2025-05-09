@@ -31,3 +31,25 @@ SHORTCUTS
 - (to indent block of code, first highlight it in visual mode, then hit) > (or) < -> indent block of code
 
 - [CMD] + [SHIFT] + r -> to hard refresh browser (refresh caches like css styling) 
+
+
+
+
+
+LAZYVIM NOTES
+  - [SPACE] => leader key
+  - [SPACE] + e => open/close filetree
+  - [SPACE] + f + f => find files within directory
+  - [SPACE] + s + g => search for word within files within directory
+  - [SPACE] + u + C => change color scheme
+  - [SPACE] + f + b => search buffers for file
+  - ] + b => move to right bufffer, [ + b => move to left buffer
+  - H, L => move left or right between buffers
+  - [SPACE] + | => split screen vertically
+  - [SPACE] + - => split screen horizontally
+  - [CTRL] + hjkl => move between these screens
+  - [SPACE] + s + k => search keymaps
+  - [SPACE] + s + r => search and replace
+  - [SPACE] + f + t => opens bottom horizontal terminal, use ctrl + hjkl to get out of it
+  - [CTRl] + w + < or >  or + or - => change buffer size, usefull for making bottom horizontal terminal smaller
+
