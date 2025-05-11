@@ -96,7 +96,7 @@ const handleClick = (
   clickedPiece: Position | null, 
   setClickedPiece: React.Dispatch<React.SetStateAction<Position | null>>, 
   setTurn: React.Dispatch<React.SetStateAction<PlayerColor>>, 
-  setBoard: React.Dispatch<React.SetStateAction<Board>>, 
+  setBoard: React.Dispatch<React.SetStateAction<Board | null>>, 
   setMoveError: React.Dispatch<React.SetStateAction<Position | null>>
 ) => {
   /**
