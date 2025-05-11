@@ -64,14 +64,14 @@ export class Rook implements Piece {
   };
 
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-    const temp = board.map(row => [...row]);
+    const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
-    setBoard(temp);
+    setBoard(new Board(this.color, temp));
   }
 
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-    
+    return true;
   }
 }
 
@@ -85,14 +85,14 @@ export class Knight implements Piece {
   };
 
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-    const temp = board.map(row => [...row]);
+    const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
-    setBoard(temp);
+    setBoard(new Board(this.color, temp));
   }
 
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-
+    return true;
   }
 }
 
@@ -113,7 +113,7 @@ export class Bishop implements Piece {
   }
 
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-
+    return true;
   }
 }
 
@@ -134,7 +134,7 @@ export class Queen implements Piece {
   }
 
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-
+    return true;
   }
 }
 
@@ -155,7 +155,7 @@ export class King implements Piece {
   }
 
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-
+    return true;
   }
 }
 
