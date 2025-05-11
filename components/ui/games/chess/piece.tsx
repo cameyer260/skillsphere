@@ -7,8 +7,8 @@ type PieceType = "Pawn" | "Rook" | "Knight" | "Bishop" | "Queen" | "King";
 export interface Piece {
   type: PieceType;
   color: PlayerColor;
-  updateBoard: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) => void;
-  move: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) => boolean; // returns success or fail
+  updateBoard: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) => void;
+  move: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) => boolean; // returns success or fail
 };
 
 export class Pawn implements Piece {
@@ -20,14 +20,14 @@ export class Pawn implements Piece {
     this.color = col;
   };
 
-  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
 
-  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     console.log(currentPos);
     console.log(toPos);
     // CASE 1: pawn is moving into open spot forward (1 or 2 spaces forward)
@@ -45,7 +45,7 @@ export class Pawn implements Piece {
     }
 
     // CASE 2: diagonal move  --------------------------------------------------------------------------------------------------------STILL NEEDS TESTING
-    if ((currentPos.c === toPos.c-1 || currentPos.c === toPos.c+1) && (currentPos.r === toPos.r+1) && (board.boardMatrix[toPos.r][toPos.c] && board.boardMatrix[toPos.r][toPos.c].color !== this.color)) {
+    if ((currentPos.c === toPos.c-1 || currentPos.c === toPos.c+1) && (currentPos.r === toPos.r+1) && (board.boardMatrix[toPos.r][toPos.c] && board.boardMatrix[toPos.r][toPos.c]?.color !== this.color)) {
       console.log("moving diagonal");
       this.updateBoard(currentPos, toPos, board, setBoard);
       return true;
@@ -63,14 +63,14 @@ export class Rook implements Piece {
     this.color = col;
   };
 
-  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
 
-  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     return true;
   }
 }
@@ -84,14 +84,14 @@ export class Knight implements Piece {
     this.color = col;
   };
 
-  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
 
-  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     return true;
   }
 }
@@ -105,14 +105,14 @@ export class Bishop implements Piece {
     this.color = col;
   };
 
-  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-    const temp = board.map(row => [...row]);
+  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
+    const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
-    setBoard(temp);
+    setBoard(new Board(this.color, temp));
   }
 
-  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     return true;
   }
 }
@@ -126,14 +126,14 @@ export class Queen implements Piece {
     this.color = col;
   };
 
-  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-    const temp = board.map(row => [...row]);
+  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
+    const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
-    setBoard(temp);
+    setBoard(new Board(this.color, temp));
   }
 
-  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     return true;
   }
 }
@@ -147,14 +147,14 @@ export class King implements Piece {
     this.color = col;
   };
 
-  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
-    const temp = board.map(row => [...row]);
+  updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
+    const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
-    setBoard(temp);
+    setBoard(new Board(this.color, temp));
   }
 
-  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board>>) {
+  move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     return true;
   }
 }
