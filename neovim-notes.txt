@@ -52,4 +52,5 @@ LAZYVIM NOTES
   - [SPACE] + s + r => search and replace
   - [SPACE] + f + t => opens bottom horizontal terminal, use ctrl + hjkl to get out of it
   - [CTRl] + w + < or >  or + or - => change buffer size, usefull for making bottom horizontal terminal smaller
-
+  - :resize -/+ 5 to alter height of buffer, :vertical resize +/- 5 to alter width of buffer
+  - b + d => buffer delete
