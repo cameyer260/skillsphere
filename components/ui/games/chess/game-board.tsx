@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { Pawn, Rook, Knight, Bishop, Queen, King, Piece, PieceImage } from "./piece";
+import { Pawn, Rook, Knight, Bishop, Queen, King, Piece, PieceImage, typeToPieceLetter } from "./piece";
 
 export type PlayerColor = "white" | "black";
 
@@ -54,6 +54,94 @@ export class Board {
   };
 };
 
+const getCastlingInfo = (board: Board, realPlayerColor: PlayerColor) => {
+  let castlingInfo = "";
+  if (realPlayerColor === "white") {
+    if (board.boardMatrix[7][4]?.hasMoved === false) { // first check if king has moved, if it has we can bypass adding any castling availability for the white side
+      if (board.boardMatrix[7][7]?.hasMoved === false) castlingInfo += "K";
+      if (board.boardMatrix[7][0]?.hasMoved === false) castlingInfo += "Q";
+    }
+    if (board.boardMatrix[0][4]?.hasMoved === false) {
+      if (board.boardMatrix[0][7]?.hasMoved === false) castlingInfo += "k";
+      if (board.boardMatrix[0][0]?.hasMoved === false) castlingInfo += "q";
+    }
+  } else {
+    if (board.boardMatrix[0][3]?.hasMoved === false) { // first check if king has moved, if it has we can bypass adding any castling availability for the white side
+      if (board.boardMatrix[0][0]?.hasMoved === false) castlingInfo += "K";
+      if (board.boardMatrix[0][7]?.hasMoved === false) castlingInfo += "Q";
+    }
+    if (board.boardMatrix[7][3]?.hasMoved === false) {
+      if (board.boardMatrix[7][0]?.hasMoved === false) castlingInfo += "k";
+      if (board.boardMatrix[7][7]?.hasMoved === false) castlingInfo += "q";
+    }
+  }
+  if (!castlingInfo) return "-";
+  return castlingInfo;
+}
+
+const getFENChar = (piece: Piece) => {
+  let char = typeToPieceLetter[piece.type];
+  if (piece.color === "white") {
+    char = char.toUpperCase();
+  }
+  return char;
+}
+
+/**
+ * converts the board to an FEN string
+ * @param {Board | null} board - the board object
+ * @param {PlayerColor} playerToMove - the turn of the game
+ * @param {PlayerColor} realPlayerColor - the color of the actual human playing on the client side
+ */
+const boardToFEN = (board: Board | null, playerToMove: PlayerColor, realPlayerColor: PlayerColor) => {
+  if (!board) return;
+  let fen = "";
+  for (let row of board.boardMatrix) {
+    let emptyCount = 0;
+
+    for (let cell of row) {
+      if (!cell) {
+        emptyCount++;
+      } else {
+        if (emptyCount > 0) {
+          fen += emptyCount;
+          emptyCount = 0;
+        }
+
+        const pieceLetter = getFENChar(cell);
+        fen += pieceLetter;
+      }
+    }
+    if (emptyCount > 0) {
+      fen += emptyCount;
+    }
+    fen += "/";
+  }
+  fen = fen.slice(0, -1);
+  const turn = (playerToMove === "white" ? "w" : "b");
+  const castling = getCastlingInfo(board, realPlayerColor);
+  fen += ` ${turn} ${castling} - 0 1`;
+  return fen;
+}
+
+const getBestMove = async (fen: string | undefined) => {
+  try {
+    if (!fen) throw new Error('Error converting board to FEN string');
+    // Call the Stockfish API
+    const response = await fetch(`https://stockfish.online/api/stockfish.php?fen=${encodeURIComponent(fen)}&depth=15&mode=bestmove`);
+    const data = await response.json();
+    console.log(data);
+
+    if (data && data.bestmove) {
+      return data.bestmove;
+    } else {
+      throw new Error('Invalid response from API');
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 const handleMove = (
   position: Position,
   board: Board,
@@ -62,7 +150,7 @@ const handleMove = (
   setClickedPiece: React.Dispatch<React.SetStateAction<Position | null>>,
   setTurn: React.Dispatch<React.SetStateAction<PlayerColor>>,
   setBoard: React.Dispatch<React.SetStateAction<Board | null>>,
-  setMoveError: React.Dispatch<React.SetStateAction<Position | null>>
+  setMoveError: React.Dispatch<React.SetStateAction<Position | null>>,
 ) => {
   /**
    * 1. call move on piece, will return true on success, false on fail
@@ -82,7 +170,7 @@ const handleMove = (
   }
 
   // update states assuming success
-  // setTurn(turn === "white" ? "black" : "white");          TEMP DISABLE FOR DEVELOPMENT
+  setTurn(turn === "white" ? "black" : "white");
   setClickedPiece(null);
 }
 
@@ -95,7 +183,7 @@ const handleClick = (
   setClickedPiece: React.Dispatch<React.SetStateAction<Position | null>>,
   setTurn: React.Dispatch<React.SetStateAction<PlayerColor>>,
   setBoard: React.Dispatch<React.SetStateAction<Board | null>>,
-  setMoveError: React.Dispatch<React.SetStateAction<Position | null>>
+  setMoveError: React.Dispatch<React.SetStateAction<Position | null>>,
 ) => {
   /**
    * 1. check if board is null, if it is exit this function
@@ -117,12 +205,12 @@ export default function gameBoard() {
   // current players turn
   const [turn, setTurn] = useState<PlayerColor>("white"); // white always starts first in chess
 
-  // our players color
+  // // our players color
   // const [playerColor, setPlayerColor] = useState<PlayerColor>(() => {
   //   const rand = Math.floor(Math.random() * 2); // generate either 0 or 1, 50/50 chance
   //   return (rand === 0 ? "white" : "black");
   // });
-  //
+
   const [playerColor, setPlayerColor] = useState<PlayerColor>("white"); // for testing and development, we always are white so we can always move pieces
 
   const [board, setBoard] = useState<Board | null>(null);
@@ -134,7 +222,13 @@ export default function gameBoard() {
 
   useEffect(() => {
     setBoard(new Board(playerColor));
-  }, [playerColor]);
+  }, []);
+
+  // useEffect(() => {
+  //   if (turn !== playerColor) {
+  //
+  //   }
+  // }, [turn]);
 
   return (
     <div className="flex flex-col items-center justify-center w-5/12 aspect-square max-h-[calc(100%-2rem)]">
@@ -164,6 +258,11 @@ export default function gameBoard() {
           ))}
         </div>
       ))}
+      <button onClick={
+        () => console.log(getBestMove(boardToFEN(board, turn, playerColor)))
+      }>
+        Click me
+      </button>
     </div>
   )
 };

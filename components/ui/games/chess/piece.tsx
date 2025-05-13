@@ -371,7 +371,7 @@ interface PieceImageProps {
   color: PlayerColor,
 }
 
-const typeToPieceLetter: Record<PieceType, String> = {
+export const typeToPieceLetter: Record<PieceType, String> = {
   "Pawn": "p",
   "Rook": "r",
   "Knight": "n",
