@@ -93,13 +93,29 @@ const getFENChar = (piece: Piece) => {
  * @param {PlayerColor} playerToMove - the turn of the game
  * @param {PlayerColor} realPlayerColor - the color of the actual human playing on the client side
  */
-const boardToFEN = (board: Board | null, playerToMove: PlayerColor, realPlayerColor: PlayerColor) => {
+const boardToFEN = (
+  board: Board | null,
+  playerToMove: PlayerColor,
+  realPlayerColor: PlayerColor
+) => {
   if (!board) return;
+
   let fen = "";
-  for (let row of board.boardMatrix) {
+
+  // Determine the row order based on player color
+  const rows = realPlayerColor === "white"
+    ? board.boardMatrix
+    : [...board.boardMatrix].reverse(); // reverse rows for black
+
+  for (let row of rows) {
     let emptyCount = 0;
 
-    for (let cell of row) {
+    // Determine the column order based on player color
+    const cells = realPlayerColor === "white"
+      ? row
+      : [...row].reverse(); // reverse columns for black
+
+    for (let cell of cells) {
       if (!cell) {
         emptyCount++;
       } else {
@@ -112,33 +128,71 @@ const boardToFEN = (board: Board | null, playerToMove: PlayerColor, realPlayerCo
         fen += pieceLetter;
       }
     }
+
     if (emptyCount > 0) {
       fen += emptyCount;
     }
+
     fen += "/";
   }
-  fen = fen.slice(0, -1);
-  const turn = (playerToMove === "white" ? "w" : "b");
-  const castling = getCastlingInfo(board, realPlayerColor);
-  fen += ` ${turn} ${castling} - 0 1`;
-  return fen;
-}
 
-const getBestMove = async (fen: string | undefined) => {
+  fen = fen.slice(0, -1); // remove last slash
+
+  const turn = playerToMove === "white" ? "w" : "b";
+  const castling = getCastlingInfo(board, realPlayerColor);
+
+  fen += ` ${turn} ${castling} - 0 1`;
+
+  return fen;
+};
+
+const getBestMove = async (fen: string | undefined, pc: PlayerColor) => {
   try {
     if (!fen) throw new Error('Error converting board to FEN string');
-    // Call the Stockfish API
-    const response = await fetch(`https://stockfish.online/api/stockfish.php?fen=${encodeURIComponent(fen)}&depth=15&mode=bestmove`);
-    const data = await response.json();
-    console.log(data);
-
-    if (data && data.bestmove) {
-      return data.bestmove;
+    const response = await fetch("https://chess-api.com/v1", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ fen: fen }),
+    });
+    const result = await response.json();
+    const from = result.from;
+    const to = result.to;
+    // now harvest a currentPosition and toPosition out of these strings (format of: ex. "b5") and return them in an array of two objects, index 0 is fromPosition, index 1 is toPoisiton
+    if (pc === "white") {
+      const fromCol = from[0].toLowerCase().charCodeAt(0) - 97; // a = 0, b = 1, ...
+      const fromRow = 8 - from[1];
+      const toCol = to[0].toLowerCase().charCodeAt(0) - 97;
+      const toRow = 8 - to[1];
+      return [
+        {
+          r: fromRow,
+          c: fromCol
+        },
+        {
+          r: toRow,
+          c: toCol
+        }
+      ];
     } else {
-      throw new Error('Invalid response from API');
+      const fromCol = from[0].toLowerCase().charCodeAt(0) - 97; // a = 0, b = 1, ...
+      const fromRow = from[1] - 1;
+      const toCol = to[0].toLowerCase().charCodeAt(0) - 97;
+      const toRow = to[1] - 1;
+      return [
+        {
+          r: fromRow,
+          c: fromCol
+        },
+        {
+          r: toRow,
+          c: toCol
+        }
+      ];
     }
   } catch (error) {
-    console.log(error);
+    console.log(error); // temp for development
   }
 }
 
@@ -205,13 +259,13 @@ export default function gameBoard() {
   // current players turn
   const [turn, setTurn] = useState<PlayerColor>("white"); // white always starts first in chess
 
-  // // our players color
-  // const [playerColor, setPlayerColor] = useState<PlayerColor>(() => {
-  //   const rand = Math.floor(Math.random() * 2); // generate either 0 or 1, 50/50 chance
-  //   return (rand === 0 ? "white" : "black");
-  // });
+  // our players color
+  const [playerColor, setPlayerColor] = useState<PlayerColor>(() => {
+    const rand = Math.floor(Math.random() * 2); // generate either 0 or 1, 50/50 chance
+    return (rand === 0 ? "white" : "black");
+  });
 
-  const [playerColor, setPlayerColor] = useState<PlayerColor>("white"); // for testing and development, we always are white so we can always move pieces
+  // const [playerColor, setPlayerColor] = useState<PlayerColor>("white"); // for testing and development, we always are white so we can always move pieces
 
   const [board, setBoard] = useState<Board | null>(null);
 
@@ -224,11 +278,21 @@ export default function gameBoard() {
     setBoard(new Board(playerColor));
   }, []);
 
-  // useEffect(() => {
-  //   if (turn !== playerColor) {
-  //
-  //   }
-  // }, [turn]);
+  useEffect(() => {
+    const botTurn = async () => {
+      if (!board) return;
+      const response = await getBestMove(boardToFEN(board, turn, playerColor), playerColor);
+      if (!response) return;
+      const fromPos = response[0];
+      const toPos = response[1];
+      const temp = board.boardMatrix.map(row => [...row]);
+      temp[toPos.r][toPos.c] = temp[fromPos.r][fromPos.c];
+      temp[fromPos.r][fromPos.c] = null;
+      setBoard(new Board(playerColor, temp));
+      setTurn(turn === "white" ? "black" : "white");
+    };
+    if (turn !== playerColor) botTurn();
+  }, [turn, board]);
 
   return (
     <div className="flex flex-col items-center justify-center w-5/12 aspect-square max-h-[calc(100%-2rem)]">
@@ -237,32 +301,40 @@ export default function gameBoard() {
           {arr.map((el, c) => (
             <div
               key={c}
-              className="flex-1 relative"
+              className="flex-1 relative select-none"
               style={{
                 backgroundColor: `${(r === 0 || r % 2 === 0) ?
                   (c === 0 || c % 2 === 0 ? "rgb(235, 236, 208)" : "rgb(115, 149, 82)") :
-                  (c === 0 || c % 2 === 0 ? "rgb(115, 149, 82)" : "rgb(235, 236, 208)")}
-              `}}
+                  (c === 0 || c % 2 === 0 ? "rgb(115, 149, 82)" : "rgb(235, 236, 208)")}`,
+                color: `${(r === 0 || r % 2 === 0) ?
+                  (c === 0 || c % 2 === 0 ? "rgb(115, 149, 82)" : "rgb(235, 236, 208)") :
+                  (c === 0 || c % 2 === 0 ? "rgb(235, 236, 208)" : "rgb(115, 149, 82)")}`
+              }}
               onClick={() => handleClick({ r: r, c: c }, board, playerColor, turn, clickedPiece, setClickedPiece, setTurn, setBoard, setMoveError)}
             >
               {el && (
-                <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 pointer-events-none select-none">
                   <PieceImage type={el.type} color={el.color} />
                 </div>
               )}
               {((moveError?.r === r && moveError?.c === c) || (clickedPiece?.r === r && clickedPiece?.c === c)) && (
-                <div className="absolute inset-0 pointer-events-none bg-red-500/20">
+                <div className="absolute inset-0 pointer-events-none bg-red-500/20 selelct-none">
                 </div>
+              )}
+              {(playerColor === "white" ?
+                <>
+                  {r === 7 && <p className="absolute bottom-0 right-1 pointer-events-none select-none text-xs">{String.fromCharCode(96 + c + 1)}</p>}
+                  {c === 0 && <p className="absolute top-0 left-1 pointer-events-none select-none text-xs">{8 - r}</p>}
+                </> :
+                <>
+                  {r === 7 && <p className="absolute bottom-0 right-1 pointer-events-none select-none text-xs">{String.fromCharCode(96 + c + 1)}</p>}
+                  {c === 0 && <p className="absolute top-0 left-1 pointer-events-none select-none text-xs">{r + 1}</p>}
+                </>
               )}
             </div>
           ))}
         </div>
       ))}
-      <button onClick={
-        () => console.log(getBestMove(boardToFEN(board, turn, playerColor)))
-      }>
-        Click me
-      </button>
     </div>
   )
 };
