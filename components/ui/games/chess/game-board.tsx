@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Pawn, Rook, Knight, Bishop, Queen, King, Piece, PieceImage, typeToPieceLetter } from "./piece";
 
 export type PlayerColor = "white" | "black";
@@ -148,6 +149,7 @@ const boardToFEN = (
 
 const getBestMove = async (fen: string | undefined, pc: PlayerColor) => {
   try {
+    console.log(fen);
     if (!fen) throw new Error('Error converting board to FEN string');
     const response = await fetch("https://chess-api.com/v1", {
       method: "POST",
@@ -157,6 +159,7 @@ const getBestMove = async (fen: string | undefined, pc: PlayerColor) => {
       body: JSON.stringify({ fen: fen }),
     });
     const result = await response.json();
+    console.log(result);
     const from = result.from;
     const to = result.to;
     // now harvest a currentPosition and toPosition out of these strings (format of: ex. "b5") and return them in an array of two objects, index 0 is fromPosition, index 1 is toPoisiton
@@ -176,9 +179,9 @@ const getBestMove = async (fen: string | undefined, pc: PlayerColor) => {
         }
       ];
     } else {
-      const fromCol = from[0].toLowerCase().charCodeAt(0) - 97; // a = 0, b = 1, ...
+      const fromCol = 7 - (from[0].toLowerCase().charCodeAt(0) - 97); // a = 0, b = 1, ...
       const fromRow = from[1] - 1;
-      const toCol = to[0].toLowerCase().charCodeAt(0) - 97;
+      const toCol = 7 - (to[0].toLowerCase().charCodeAt(0) - 97);
       const toRow = to[1] - 1;
       return [
         {
@@ -274,6 +277,8 @@ export default function gameBoard() {
 
   const [moveError, setMoveError] = useState<Position | null>(null);
 
+  const router = useRouter();
+
   useEffect(() => {
     setBoard(new Board(playerColor));
   }, []);
@@ -283,12 +288,14 @@ export default function gameBoard() {
       if (!board) return;
       const response = await getBestMove(boardToFEN(board, turn, playerColor), playerColor);
       if (!response) return;
+      console.log(response);
       const fromPos = response[0];
       const toPos = response[1];
-      const temp = board.boardMatrix.map(row => [...row]);
-      temp[toPos.r][toPos.c] = temp[fromPos.r][fromPos.c];
-      temp[fromPos.r][fromPos.c] = null;
-      setBoard(new Board(playerColor, temp));
+      if (!board.boardMatrix[fromPos.r][fromPos.c]?.botMove(fromPos, toPos, board, setBoard)) {
+        alert("The chess bot is not working currently. You may have reached the rate limit for today. Please try again later.");
+        router.push("/protected");
+        return;
+      }
       setTurn(turn === "white" ? "black" : "white");
     };
     if (turn !== playerColor) botTurn();
@@ -327,7 +334,7 @@ export default function gameBoard() {
                   {c === 0 && <p className="absolute top-0 left-1 pointer-events-none select-none text-xs">{8 - r}</p>}
                 </> :
                 <>
-                  {r === 7 && <p className="absolute bottom-0 right-1 pointer-events-none select-none text-xs">{String.fromCharCode(96 + c + 1)}</p>}
+                  {r === 7 && <p className="absolute bottom-0 right-1 pointer-events-none select-none text-xs">{String.fromCharCode(96 + 7 - c + 1)}</p>}
                   {c === 0 && <p className="absolute top-0 left-1 pointer-events-none select-none text-xs">{r + 1}</p>}
                 </>
               )}
