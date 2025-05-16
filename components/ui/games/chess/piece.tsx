@@ -1,5 +1,4 @@
 import Image from "next/image";
-import react from "react";
 import type { PlayerColor } from "./game-board";
 import { Position, Board } from "./game-board";
 

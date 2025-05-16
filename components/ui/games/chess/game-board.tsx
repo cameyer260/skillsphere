@@ -195,7 +195,9 @@ const getBestMove = async (fen: string | undefined, pc: PlayerColor) => {
       ];
     }
   } catch (error) {
+    console.log("there is an error");
     console.log(error); // temp for development
+    return false;
   }
 }
 
@@ -268,8 +270,6 @@ export default function gameBoard() {
     return (rand === 0 ? "white" : "black");
   });
 
-  // const [playerColor, setPlayerColor] = useState<PlayerColor>("white"); // for testing and development, we always are white so we can always move pieces
-
   const [board, setBoard] = useState<Board | null>(null);
 
   // for our players current clicked piece, after it is set (when the player clicks a piece), they can move the piece by clicking a valid square
@@ -277,27 +277,75 @@ export default function gameBoard() {
 
   const [moveError, setMoveError] = useState<Position | null>(null);
 
+  const [inCheck, setInCheck] = useState<boolean>(false);
+
   const router = useRouter();
 
   useEffect(() => {
     setBoard(new Board(playerColor));
   }, []);
 
+  /**
+    * Handles bot turn and also handles check logic. Runs on each turn.
+    */
   useEffect(() => {
+    const simulateThinking = () => {
+      let ms = Math.random() * 3000 + 1000;
+      return new Promise(resolve => setTimeout(resolve, ms));
+    };
     const botTurn = async () => {
-      if (!board) return;
-      const response = await getBestMove(boardToFEN(board, turn, playerColor), playerColor);
-      if (!response) return;
-      console.log(response);
-      const fromPos = response[0];
-      const toPos = response[1];
-      if (!board.boardMatrix[fromPos.r][fromPos.c]?.botMove(fromPos, toPos, board, setBoard)) {
+      try {
+        if (!board) return;
+        const response = await getBestMove(boardToFEN(board, turn, playerColor), playerColor);
+        if (!response) throw new Error("Bad response");
+        console.log(response);
+        const fromPos = response[0];
+        const toPos = response[1];
+        await simulateThinking();
+        if (!board.boardMatrix[fromPos.r][fromPos.c]?.botMove(fromPos, toPos, board, setBoard)) throw new Error("Invalid bot move");
+        setTurn(turn === "white" ? "black" : "white");
+        return;
+      } catch (error) {
         alert("The chess bot is not working currently. You may have reached the rate limit for today. Please try again later.");
         router.push("/protected");
         return;
       }
-      setTurn(turn === "white" ? "black" : "white");
     };
+
+    const findCheck = () => {
+      // iterates through board, finds black king, finds white king, sees if they are in check
+      if (!board) return;
+      let foundBK: Position | null = null;
+      let foundWK: Position | null = null;
+      for (let r = 0; r < board?.boardMatrix.length; r++) {
+        for (let c = 0; c < board?.boardMatrix[r].length; c++) {
+          if (board.boardMatrix[r][c]?.type === "King") {
+            board.boardMatrix[r][c]?.color === "white" ?
+              foundWK = {
+                r: r,
+                c: c
+              } :
+              foundBK = {
+                r: r,
+                c: c,
+              };
+          }
+        }
+      }
+      // end the game if either kings are missing
+      if (!foundBK) {
+        alert("White has won!");
+        router.push("/protected/play/chess");
+        return;
+      } else if (!foundWK) {
+        alert("Black has won!");
+        router.push("/protected/play/chess");
+        return;
+      }
+      // now find if either are in check
+
+    }
+
     if (turn !== playerColor) botTurn();
   }, [turn, board]);
 
