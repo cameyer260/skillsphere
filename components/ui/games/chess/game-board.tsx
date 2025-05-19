@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Pawn, Rook, Knight, Bishop, Queen, King, Piece, PieceImage, typeToPieceLetter } from "./piece";
+import { Player } from "../tic-tac-toe/game-board";
 
 export type PlayerColor = "white" | "black";
 
@@ -162,6 +163,7 @@ const getBestMove = async (fen: string | undefined, pc: PlayerColor) => {
     console.log(result);
     const from = result.from;
     const to = result.to;
+    if (!from || !to) throw new Error("Bad response");
     // now harvest a currentPosition and toPosition out of these strings (format of: ex. "b5") and return them in an array of two objects, index 0 is fromPosition, index 1 is toPoisiton
     if (pc === "white") {
       const fromCol = from[0].toLowerCase().charCodeAt(0) - 97; // a = 0, b = 1, ...
@@ -263,22 +265,17 @@ const handleClick = (
 export default function gameBoard() {
   // current players turn
   const [turn, setTurn] = useState<PlayerColor>("white"); // white always starts first in chess
-
   // our players color
   const [playerColor, setPlayerColor] = useState<PlayerColor>(() => {
     const rand = Math.floor(Math.random() * 2); // generate either 0 or 1, 50/50 chance
     return (rand === 0 ? "white" : "black");
   });
-
   const [board, setBoard] = useState<Board | null>(null);
-
   // for our players current clicked piece, after it is set (when the player clicks a piece), they can move the piece by clicking a valid square
   const [clickedPiece, setClickedPiece] = useState<Position | null>(null);
-
   const [moveError, setMoveError] = useState<Position | null>(null);
-
-  const [inCheck, setInCheck] = useState<boolean>(false);
-
+  const [inCheck, setInCheck] = useState<PlayerColor | null>(null); // null when no one is in check
+  const [checkmate, setCheckmate] = useState<PlayerColor | null>(null) // null when no one is in checkmate
   const router = useRouter();
 
   useEffect(() => {
@@ -306,14 +303,20 @@ export default function gameBoard() {
         setTurn(turn === "white" ? "black" : "white");
         return;
       } catch (error) {
+        // if there is an error in the response and the bot is in check we can be confident we have reached checkmate
+        if (playerInCheck && playerColor !== playerInCheck) {
+          setCheckmate(playerInCheck);
+          return;
+        }
+        // check if the bot is in check
+        // if they are and the api returned an error response we can be confident the bot is in checkmate
         alert("The chess bot is not working currently. You may have reached the rate limit for today. Please try again later.");
         router.push("/protected");
         return;
       }
     };
-
-    const findCheck = () => {
-      // iterates through board, finds black king, finds white king, sees if they are in check
+    const findKings = () => {
+      // iterates through board and finds both kings
       if (!board) return;
       let foundBK: Position | null = null;
       let foundWK: Position | null = null;
@@ -332,22 +335,162 @@ export default function gameBoard() {
           }
         }
       }
+      return [foundBK, foundWK];
+    };
+    const checkDiagonals = (pos: Position, color: PlayerColor) => {
+      if (!board) return false;
+      // let's check for pawns first because for that orientation of board matters so we must check if they are the bot or not
+      if (color === playerColor) {
+        // human player, starts at bottom of board
+        if ((board.boardMatrix[pos.r - 1][pos.c - 1] && board.boardMatrix[pos.r - 1][pos.c - 1]?.color !== color && board.boardMatrix[pos.r - 1][pos.c - 1]?.type === "Pawn") ||
+          (board.boardMatrix[pos.r - 1][pos.c + 1] && board.boardMatrix[pos.r - 1][pos.c + 1]?.color !== color && board.boardMatrix[pos.r - 1][pos.c + 1]?.type === "Pawn")) return true;
+      } else {
+        // bot player, starts at top of board
+        if ((board.boardMatrix[pos.r + 1][pos.c - 1] && board.boardMatrix[pos.r + 1][pos.c - 1]?.color !== color && board.boardMatrix[pos.r + 1][pos.c - 1]?.type === "Pawn") ||
+          (board.boardMatrix[pos.r + 1][pos.c + 1] && board.boardMatrix[pos.r + 1][pos.c + 1]?.color !== color && board.boardMatrix[pos.r + 1][pos.c + 1]?.type === "Pawn")) return true;
+      }
+      // now we can check diagonals for bishops and queens
+      // start with upper right diagonal
+      let i = 1;
+      while (board.boardMatrix[pos.r + i]?.[pos.c + i] === null) i++;
+      if (board.boardMatrix[pos.r + i]?.[pos.c + i]
+        && board.boardMatrix[pos.r + i]?.[pos.c + i]?.color !== color
+        && (board.boardMatrix[pos.r + i]?.[pos.c + i]?.type === "Bishop" || board.boardMatrix[pos.r + i]?.[pos.c + i]?.type === "Queen"))
+        return true;
+      // now we'll check upper left diagonal
+      i = 1;
+      while (board.boardMatrix[pos.r + i]?.[pos.c - i] === null) i++;
+      if (board.boardMatrix[pos.r + i]?.[pos.c - i]
+        && board.boardMatrix[pos.r + i]?.[pos.c - i]?.color !== color
+        && (board.boardMatrix[pos.r + i]?.[pos.c - i]?.type === "Bishop" || board.boardMatrix[pos.r + i]?.[pos.c - i]?.type === "Queen"))
+        return true;
+      // now we'll check lower left diagonal
+      i = 1;
+      while (board.boardMatrix[pos.r - i]?.[pos.c - i] === null) i++;
+      if (board.boardMatrix[pos.r - i]?.[pos.c - i]
+        && board.boardMatrix[pos.r - i]?.[pos.c - i]?.color !== color
+        && (board.boardMatrix[pos.r - i]?.[pos.c - i]?.type === "Bishop" || board.boardMatrix[pos.r - i][pos.c - i]?.type === "Queen"))
+        return true;
+      // now we'll check lower right diagonal
+      i = 1;
+      while (board.boardMatrix[pos.r - i]?.[pos.c + i] === null) i++;
+      if (board.boardMatrix[pos.r - i]?.[pos.c + i]
+        && board.boardMatrix[pos.r - i]?.[pos.c + i]?.color !== color
+        && (board.boardMatrix[pos.r - i]?.[pos.c + i]?.type === "Bishop" || board.boardMatrix[pos.r - i]?.[pos.c + i]?.type === "Queen"))
+        return true;
+      return false;
+    };
+    const checkStraights = (pos: Position, color: PlayerColor) => {
+      if (!board) return false;
+      // first check down
+      let i = 1;
+      while (board.boardMatrix[pos.r + i]?.[pos.c] === null) i++;
+      if (board.boardMatrix[pos.r + i]?.[pos.c]
+        && board.boardMatrix[pos.r + i]?.[pos.c]?.color !== color
+        && (board.boardMatrix[pos.r + i]?.[pos.c]?.type === "Rook" || board.boardMatrix[pos.r + i]?.[pos.c]?.type === "Queen"))
+        return true;
+      // then check left
+      i = 1;
+      while (board.boardMatrix[pos.r]?.[pos.c - i] === null) i++;
+      if (board.boardMatrix[pos.r]?.[pos.c - i]
+        && board.boardMatrix[pos.r]?.[pos.c - i]?.color !== color
+        && (board.boardMatrix[pos.r]?.[pos.c - i]?.type === "Rook" || board.boardMatrix[pos.r]?.[pos.c - i]?.type === "Queen"))
+        return true;
+      // then check up
+      i = 1;
+      while (board.boardMatrix[pos.r - i]?.[pos.c] === null) i++;
+      if (board.boardMatrix[pos.r - i]?.[pos.c]
+        && board.boardMatrix[pos.r - i]?.[pos.c]?.color !== color
+        && (board.boardMatrix[pos.r - i]?.[pos.c]?.type === "Rook" || board.boardMatrix[pos.r - i]?.[pos.c]?.type === "Queen"))
+        return true;
+      // then check right
+      i = 1;
+      while (board.boardMatrix[pos.r]?.[pos.c + i] === null) i++;
+      if (board.boardMatrix[pos.r]?.[pos.c + i]
+        && board.boardMatrix[pos.r]?.[pos.c + i]?.color !== color
+        && (board.boardMatrix[pos.r]?.[pos.c + i]?.type === "Rook" || board.boardMatrix[pos.r]?.[pos.c + i]?.type === "Queen"))
+        return true;
+      return false;
+    };
+    const checkHorses = (pos: Position, color: PlayerColor) => {
+      if (!board) return false;
+      // brute force check
+      // first check upmost left
+      if (board.boardMatrix[pos.r - 2]?.[pos.c - 1] && board.boardMatrix[pos.r - 2]?.[pos.c - 1]?.color !== color && board.boardMatrix[pos.r - 2]?.[pos.c - 1]?.type === "Knight") return true;
+      // then check upmost right
+      if (board.boardMatrix[pos.r - 2]?.[pos.c + 1] && board.boardMatrix[pos.r - 2]?.[pos.c + 1]?.color !== color && board.boardMatrix[pos.r - 2]?.[pos.c + 1]?.type === "Knight") return true;
+      // then check rightmost up
+      if (board.boardMatrix[pos.r - 1]?.[pos.c + 2] && board.boardMatrix[pos.r - 1]?.[pos.c + 2]?.color !== color && board.boardMatrix[pos.r - 1]?.[pos.c + 2]?.type === "Knight") return true;
+      // then check rightmost down
+      if (board.boardMatrix[pos.r + 1]?.[pos.c + 2] && board.boardMatrix[pos.r + 1]?.[pos.c + 2]?.color !== color && board.boardMatrix[pos.r + 1]?.[pos.c + 2]?.type === "Knight") return true;
+      // then check downmost right
+      if (board.boardMatrix[pos.r + 2]?.[pos.c + 1] && board.boardMatrix[pos.r + 2]?.[pos.c + 1]?.color !== color && board.boardMatrix[pos.r + 2]?.[pos.c + 1]?.type === "Knight") return true;
+      // then check downmost left
+      if (board.boardMatrix[pos.r + 2]?.[pos.c - 1] && board.boardMatrix[pos.r + 2]?.[pos.c - 1]?.color !== color && board.boardMatrix[pos.r + 2]?.[pos.c - 1]?.type === "Knight") return true;
+      // then check leftmost down
+      if (board.boardMatrix[pos.r + 1]?.[pos.c - 2] && board.boardMatrix[pos.r + 1]?.[pos.c - 2]?.color !== color && board.boardMatrix[pos.r + 1]?.[pos.c - 2]?.type === "Knight") return true;
+      // then check leftmost up
+      if (board.boardMatrix[pos.r - 1]?.[pos.c - 2] && board.boardMatrix[pos.r - 1]?.[pos.c - 2]?.color !== color && board.boardMatrix[pos.r - 1]?.[pos.c - 2]?.type === "Knight") return true;
+      return false;
+    };
+    const findCheck = () => {
       // end the game if either kings are missing
-      if (!foundBK) {
+      const kings = findKings();
+      if (!kings) return;
+      const bk = kings[0];
+      const wk = kings[1];
+      if (!bk) {
         alert("White has won!");
         router.push("/protected/play/chess");
         return;
-      } else if (!foundWK) {
+      } else if (!wk) {
         alert("Black has won!");
         router.push("/protected/play/chess");
         return;
       }
+      const checkFunctions = [checkDiagonals, checkStraights, checkHorses];
+      const isInCheck = (kingPos: Position, color: PlayerColor): boolean => {
+        return checkFunctions.some(fn => fn(kingPos, color));
+      }
       // now find if either are in check
-
+      if (playerColor === "white") {
+        // find if human player is in check first
+        if (isInCheck(wk, "white")) {
+          setInCheck("white");
+          return "white";
+        }
+        // now find if bot is
+        if (isInCheck(bk, "black")) {
+          setInCheck("black");
+          return "black";
+        }
+      } else {
+        // find if human player is in check first
+        if (isInCheck(bk, "black")) {
+          setInCheck("black");
+          return "black";
+        }
+        // now find if bot is
+        if (isInCheck(wk, "white")) {
+          setInCheck("white");
+          return "white";
+        }
+      }
     }
-
+    // first find who is in check
+    const playerInCheck = findCheck();
     if (turn !== playerColor) botTurn();
   }, [turn, board]);
+
+  useEffect(() => {
+    console.log(inCheck);
+  }, [inCheck]);
+
+  useEffect(() => {
+    // handle checkmate when it happens and end the game
+    console.log(checkmate);
+    console.log("yo da game is over");
+  }, [checkmate]);
 
   return (
     <div className="flex flex-col items-center justify-center w-5/12 aspect-square max-h-[calc(100%-2rem)]">
