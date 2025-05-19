@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Pawn, Rook, Knight, Bishop, Queen, King, Piece, PieceImage, typeToPieceLetter } from "./piece";
-import { Player } from "../tic-tac-toe/game-board";
 
 export type PlayerColor = "white" | "black";
 
@@ -11,16 +10,30 @@ export interface Position {
   r: number,
   c: number,
 }
+export interface Move {
+  from: Position;
+  to: Position;
+};
+
 
 export class Board {
   boardMatrix: (Piece | null)[][];
-
   constructor(pc: PlayerColor, bM?: (Piece | null)[][]) {
     if (bM) {
       this.boardMatrix = bM;
       return;
     }
-
+    // for testing
+    // let temp = [
+    //   (pc === "white" ? ['x', 'x', 'x', 'x', 'K', 'x', 'x', 'x'] : ['x', 'x', 'x', 'K', 'x', 'x', 'x', 'x']),
+    //   ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
+    //   ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
+    //   ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
+    //   ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
+    //   ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'],
+    //   ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+    //   (pc === "white" ? ['r', 'k', 'b', 'q', 'K', 'b', 'k', 'r'] : ['r', 'k', 'b', 'K', 'q', 'b', 'k', 'r']),
+    // ];
     let temp = [
       (pc === "white" ? ['r', 'k', 'b', 'q', 'K', 'b', 'k', 'r'] : ['r', 'k', 'b', 'K', 'q', 'b', 'k', 'r']),
       ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
@@ -31,7 +44,6 @@ export class Board {
       ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
       (pc === "white" ? ['r', 'k', 'b', 'q', 'K', 'b', 'k', 'r'] : ['r', 'k', 'b', 'K', 'q', 'b', 'k', 'r']),
     ];
-
     this.boardMatrix = temp.map((arr, row) => {
       const color = (pc === "white" ? (row < 2 ? "black" : "white") : (row < 2 ? "white" : "black"));
       return arr.map((el) => {
@@ -101,22 +113,17 @@ const boardToFEN = (
   realPlayerColor: PlayerColor
 ) => {
   if (!board) return;
-
   let fen = "";
-
   // Determine the row order based on player color
   const rows = realPlayerColor === "white"
     ? board.boardMatrix
     : [...board.boardMatrix].reverse(); // reverse rows for black
-
   for (let row of rows) {
     let emptyCount = 0;
-
     // Determine the column order based on player color
     const cells = realPlayerColor === "white"
       ? row
       : [...row].reverse(); // reverse columns for black
-
     for (let cell of cells) {
       if (!cell) {
         emptyCount++;
@@ -125,26 +132,19 @@ const boardToFEN = (
           fen += emptyCount;
           emptyCount = 0;
         }
-
         const pieceLetter = getFENChar(cell);
         fen += pieceLetter;
       }
     }
-
     if (emptyCount > 0) {
       fen += emptyCount;
     }
-
     fen += "/";
   }
-
   fen = fen.slice(0, -1); // remove last slash
-
   const turn = playerToMove === "white" ? "w" : "b";
   const castling = getCastlingInfo(board, realPlayerColor);
-
   fen += ` ${turn} ${castling} - 0 1`;
-
   return fen;
 };
 
@@ -229,7 +229,6 @@ const handleMove = (
 
     return; // exit function without updating turn because on failure to move turn does not change
   }
-
   // update states assuming success
   setTurn(turn === "white" ? "black" : "white");
   setClickedPiece(null);
@@ -477,13 +476,32 @@ export default function gameBoard() {
         }
       }
     }
+    const getPieceMoves = (pos: Position): Move[] => {
+      let moves: Move[] = [];
+
+      return moves;
+    };
+    const generateLegalMoves = (): Move[] => {
+      if (!board) return [];
+      let moves: Move[] = [];
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if (board.boardMatrix[r][c] && board.boardMatrix[r][c]?.color === playerColor) {
+            moves.push(...getPieceMoves({ r: r, c: c }));
+          }
+        }
+      }
+      return moves;
+    };
     // first find who is in check
     const playerInCheck = findCheck();
     if (turn !== playerColor) botTurn();
+    const lms = generateLegalMoves();
+    if (lms.length === 0) setCheckmate(playerColor);
   }, [turn, board]);
 
   useEffect(() => {
-    console.log(inCheck);
+    inCheck && alert(`${inCheck} is in check.`);
   }, [inCheck]);
 
   useEffect(() => {

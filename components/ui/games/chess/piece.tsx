@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { PlayerColor } from "./game-board";
-import { Position, Board } from "./game-board";
+import { Position, Board, Move } from "./game-board";
 
 type PieceType = "Pawn" | "Rook" | "Knight" | "Bishop" | "Queen" | "King";
 export interface Piece {
@@ -10,24 +10,22 @@ export interface Piece {
   updateBoard: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) => void;
   move: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) => boolean; // returns success or fail
   botMove: (currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) => boolean; // returns success or fail
+  generatePotentialMoves: (currenPos: Position, board: Board) => Move[];
 };
 
 export class Pawn implements Piece {
   type: PieceType;
   color: PlayerColor;
-
   constructor(col: PlayerColor) {
     this.type = "Pawn";
     this.color = col;
   };
-
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
-
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     // CASE 1: pawn is moving into open spot forward (1 or 2 spaces forward)
@@ -43,7 +41,6 @@ export class Pawn implements Piece {
         return true;
       }
     }
-
     // CASE 2: diagonal move
     if ((currentPos.c === toPos.c - 1 || currentPos.c === toPos.c + 1) && (currentPos.r === toPos.r + 1) && (board.boardMatrix[toPos.r][toPos.c] && board.boardMatrix[toPos.r][toPos.c]?.color !== this.color)) {
       this.updateBoard(currentPos, toPos, board, setBoard);
@@ -51,7 +48,6 @@ export class Pawn implements Piece {
     }
     return false;
   }
-
   botMove(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     // CASE 1: pawn is moving into open spot forward (1 or 2 spaces forward)
@@ -67,7 +63,6 @@ export class Pawn implements Piece {
         return true;
       }
     }
-
     // CASE 2: diagonal move
     if ((currentPos.c === toPos.c - 1 || currentPos.c === toPos.c + 1) && (currentPos.r === toPos.r - 1) && (board.boardMatrix[toPos.r][toPos.c] && board.boardMatrix[toPos.r][toPos.c]?.color !== this.color)) {
       this.updateBoard(currentPos, toPos, board, setBoard);
@@ -75,26 +70,31 @@ export class Pawn implements Piece {
     }
     return false;
   }
+  generatePotentialMoves(currentPos: Position, board: Board) {
+    const moves: Move[] = [];
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null && board.boardMatrix[currentPos.r - 2][currentPos.c] === null && currentPos.r === 6) moves.push({ from: currentPos, to: { r: currentPos.r - 2, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c - 1] && board.boardMatrix[currentPos.r - 1][currentPos.c - 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c - 1 } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c + 1] && board.boardMatrix[currentPos.r - 1][currentPos.c + 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c + 1 } });
+    return moves;
+  }
 }
 
 export class Rook implements Piece {
   type: PieceType;
   color: PlayerColor;
   hasMoved: boolean; // boolean in Rook and King for castling
-
   constructor(col: PlayerColor) {
     this.type = "Rook";
     this.color = col;
     this.hasMoved = false;
   };
-
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
-
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
@@ -142,7 +142,6 @@ export class Rook implements Piece {
     }
     return false;
   }
-
   botMove(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
@@ -189,29 +188,30 @@ export class Rook implements Piece {
       }
     }
     return false;
+  }
+  generatePotentialMoves(currentPos: Position, board: Board) {
+    const moves: Move[] = [];
+
+    return moves;
   }
 }
 
 export class Knight implements Piece {
   type: PieceType;
   color: PlayerColor;
-
   constructor(col: PlayerColor) {
     this.type = "Knight";
     this.color = col;
   };
-
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
-
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
-
     // CASE 1: moving up left
     if ((toPos.r === currentPos.r - 2 && toPos.c === currentPos.c - 1) || (toPos.r === currentPos.r - 1 && toPos.c === currentPos.c - 2)) {
       this.updateBoard(currentPos, toPos, board, setBoard);
@@ -234,11 +234,9 @@ export class Knight implements Piece {
     }
     return false;
   }
-
   botMove(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
-
     // CASE 1: moving up left
     if ((toPos.r === currentPos.r - 2 && toPos.c === currentPos.c - 1) || (toPos.r === currentPos.r - 1 && toPos.c === currentPos.c - 2)) {
       this.updateBoard(currentPos, toPos, board, setBoard);
@@ -261,25 +259,29 @@ export class Knight implements Piece {
     }
     return false;
   }
-
+  generatePotentialMoves(currentPos: Position, board: Board) {
+    const moves: Move[] = [];
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null && board.boardMatrix[currentPos.r - 2][currentPos.c] === null && currentPos.r === 6) moves.push({ from: currentPos, to: { r: currentPos.r - 2, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c - 1] && board.boardMatrix[currentPos.r - 1][currentPos.c - 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c - 1 } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c + 1] && board.boardMatrix[currentPos.r - 1][currentPos.c + 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c + 1 } });
+    return moves;
+  }
 }
 
 export class Bishop implements Piece {
   type: PieceType;
   color: PlayerColor;
-
   constructor(col: PlayerColor) {
     this.type = "Bishop";
     this.color = col;
   };
-
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
-
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
@@ -319,7 +321,6 @@ export class Bishop implements Piece {
     }
     return false;
   }
-
   botMove(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
@@ -358,25 +359,30 @@ export class Bishop implements Piece {
       }
     }
     return false;
+  }
+  generatePotentialMoves(currentPos: Position, board: Board) {
+    const moves: Move[] = [];
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null && board.boardMatrix[currentPos.r - 2][currentPos.c] === null && currentPos.r === 6) moves.push({ from: currentPos, to: { r: currentPos.r - 2, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c - 1] && board.boardMatrix[currentPos.r - 1][currentPos.c - 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c - 1 } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c + 1] && board.boardMatrix[currentPos.r - 1][currentPos.c + 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c + 1 } });
+    return moves;
   }
 }
 
 export class Queen implements Piece {
   type: PieceType;
   color: PlayerColor;
-
   constructor(col: PlayerColor) {
     this.type = "Queen";
     this.color = col;
   };
-
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
-
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
@@ -393,7 +399,6 @@ export class Queen implements Piece {
     }
     return false;
   }
-
   botMove(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
@@ -410,27 +415,31 @@ export class Queen implements Piece {
     }
     return false;
   }
-
+  generatePotentialMoves(currentPos: Position, board: Board) {
+    const moves: Move[] = [];
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null && board.boardMatrix[currentPos.r - 2][currentPos.c] === null && currentPos.r === 6) moves.push({ from: currentPos, to: { r: currentPos.r - 2, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c - 1] && board.boardMatrix[currentPos.r - 1][currentPos.c - 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c - 1 } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c + 1] && board.boardMatrix[currentPos.r - 1][currentPos.c + 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c + 1 } });
+    return moves;
+  }
 }
 
 export class King implements Piece {
   type: PieceType;
   color: PlayerColor;
   hasMoved: boolean;
-
   constructor(col: PlayerColor) {
     this.type = "King";
     this.color = col;
     this.hasMoved = false;
   };
-
   updateBoard(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     const temp = board.boardMatrix.map(row => [...row]);
     temp[toPos.r][toPos.c] = temp[currentPos.r][currentPos.c];
     temp[currentPos.r][currentPos.c] = null;
     setBoard(new Board(this.color, temp));
   }
-
   move(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     // CASE 0: castling (check before checking if they are trying to take their own piece)
@@ -502,7 +511,6 @@ export class King implements Piece {
             setBoard(new Board(this.color, temp));
             this.hasMoved = true;
             return true;
-
           }
         } else { // left rook castling right
           for (let i = currentPos.c + 1; i < toPos.c; i++) {
@@ -539,7 +547,6 @@ export class King implements Piece {
     }
     return success;
   }
-
   botMove(currentPos: Position, toPos: Position, board: Board, setBoard: React.Dispatch<React.SetStateAction<Board | null>>) {
     if (currentPos.r === toPos.r && currentPos.c === toPos.c) return false; // if they click the same square they are on return false early
     // CASE 0: bot castling
@@ -587,7 +594,6 @@ export class King implements Piece {
         return true;
       }
     }
-
     if (board.boardMatrix[toPos.r][toPos.c]?.color === this.color) return false; // if they are trying to take their own piece return false early
     // check pieces brute force, go in order of counter clockwise starting at top left square
     let success = false;
@@ -603,10 +609,16 @@ export class King implements Piece {
       this.updateBoard(currentPos, toPos, board, setBoard);
       this.hasMoved = true;
     }
-
     return success;
   }
-
+  generatePotentialMoves(currentPos: Position, board: Board) {
+    const moves: Move[] = [];
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c] === null && board.boardMatrix[currentPos.r - 2][currentPos.c] === null && currentPos.r === 6) moves.push({ from: currentPos, to: { r: currentPos.r - 2, c: currentPos.c } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c - 1] && board.boardMatrix[currentPos.r - 1][currentPos.c - 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c - 1 } });
+    if (board.boardMatrix[currentPos.r - 1][currentPos.c + 1] && board.boardMatrix[currentPos.r - 1][currentPos.c + 1]?.color !== this.color) moves.push({ from: currentPos, to: { r: currentPos.r - 1, c: currentPos.c + 1 } });
+    return moves;
+  }
 }
 
 interface PieceImageProps {
