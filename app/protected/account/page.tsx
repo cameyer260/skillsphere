@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import DOMPurify from "dompurify";
 
 export default function Account() {
   const supabase = createClient();
@@ -35,7 +36,7 @@ export default function Account() {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase.from("profiles").select("username").eq("id", user?.id).single();
-      if (data) setUsername(data.username);
+      if (data) setUsername(DOMPurify.sanitize(data.username));
     }
 
     // now create other functions to fetch other shit (fav games, avatar, friends, rank, matches played all that), then called the functions
