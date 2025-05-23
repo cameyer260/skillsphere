@@ -19,7 +19,7 @@ export const signUpAction = async (formData: FormData) => {
     );
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -31,6 +31,22 @@ export const signUpAction = async (formData: FormData) => {
     console.error(error.code + " " + error.message);
     return encodedRedirect("error", "/sign-up", error.message);
   } else {
+    // if succes sync the new user to our public.profiles
+    const userId = data.user?.id;
+    if (userId) {
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({ id: userId });
+
+      if (insertError) {
+        console.error("Failed to create profile:", insertError.message);
+        return encodedRedirect(
+          "error",
+          "/sign-up",
+          "Failed to create profile.",
+        );
+      }
+    }
     return encodedRedirect(
       "success",
       "/sign-up",

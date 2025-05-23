@@ -19,9 +19,7 @@ SHORTCUTS
 - [SPACE] + c + h -> access cheatsheet
 - [CTRL] + n -> toggle file tree open/close
 - [SPACE] + h -> open horizontal terminal
-- [SPACE] + v -> open vertical terminal
-- :wa -> save all open files
-
+- [SPACE] + v -> open vertical terminal :wa -> save all open files
 - :term -> enter terminal
 - (after :term) i -> enter insert mode in terminals
 - (once in insert mode in terminal) [CTRL] + \ + [CTRL] + n -> exit insert mode in terminal
@@ -55,3 +53,18 @@ LAZYVIM NOTES
   - :resize -/+ 5 to alter height of buffer, :vertical resize +/- 5 to alter width of buffer
   - b + d => buffer delete
   - [CTRL] + r => redo
+  - FOR GHOSTTY, use command + t to open a new tab, and command + w to close one. To cycle between tabs, use command + shift + ] or command + shift + [
+
+
+
+
+
+  NEW NEOVIM SETUP NOTES
+  - SPACE + ee -> toggle file explorer
+  - SPACE + ef -> toggle file explorer on current file
+  - CTRL + w + hjkl -> navigate through between windows like the nvim tree and current file
+  - SPACE + ff -> find files
+  - SPACE + fg -> live grep (search anyword inside any file in the directory)
+  - SPACE + fb -> search buffers
+  - SPACE + fh -> find help
+  - SPACE + l -> format code
