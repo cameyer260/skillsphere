@@ -68,3 +68,6 @@ LAZYVIM NOTES
   - SPACE + fb -> search buffers
   - SPACE + fh -> find help
   - SPACE + l -> format code
+  - "+yy or "+y -> copy to system clipboard
+  - "+p or "+P -> paste from system clipboard
+  - press K over word for typescript info on it

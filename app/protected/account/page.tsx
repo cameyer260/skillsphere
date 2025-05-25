@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useUser } from "@/app/context/UserContext";
 import DOMPurify from "dompurify";
 
 export default function Account() {
@@ -23,54 +24,55 @@ export default function Account() {
   ]);
   const [clickedGames, setClickedGames] = useState<number[]>([]);
   const [clickedAvatar, setClickedAvatar] = useState<number | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
   // theme stuff
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
+  const { user, loading } = useUser();
   useEffect(() => {
     setMounted(true);
   }, []);
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.from("profiles").select("username").eq("id", user?.id).single();
-      if (data) setUsername(DOMPurify.sanitize(data.username));
-    }
-
-    // now create other functions to fetch other shit (fav games, avatar, friends, rank, matches played all that), then called the functions
-
-    fetchProfile();
-  })
-
-  const handleUsernameSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUsernameSubmit = async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("Error uploading username");
+      if (!user) throw new Error("Error getting session");
       const { error } = await supabase
         .from("profiles")
         .update({ username: newUsername })
         .eq("id", user.id);
       if (error) throw new Error("Error uploading username");
-      setEditUsernameOverlay(false);
-      setUsername(newUsername);
-      setNewUsername("");
     } catch (err) {
       alert(err);
-      setEditUsernameOverlay(false);
       return;
     }
   };
-  const handleGamesSubmit = () => {
-    console.log(clickedGames);
+  const handleGamesSubmit = async () => {
+    try {
+      if (!user) throw new Error("Error getting session");
+      const result = clickedGames.map((i) => games[i]).join(", ");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ favorite_games: result })
+        .eq("id", user.id);
+      if (error) throw new Error("Error uploading favorite games");
+    } catch (err) {
+      alert(err);
+      return;
+    }
   };
-  const handlePictureSubmit = () => {
-    console.log(clickedAvatar);
+  const handlePictureSubmit = async () => {
+    try {
+      if (!user) throw new Error("Error getting session");
+      if (!clickedAvatar) throw new Error("No avatar has been selected");
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_index: clickedAvatar + 1 })
+        .eq("id", user.id);
+      if (error) throw new Error("Error uploading avatar");
+    } catch (err) {
+      alert(err);
+      return;
+    }
   };
 
   return (
@@ -85,18 +87,28 @@ export default function Account() {
               setNfOverlay(false);
             }}
           >
-            <Image
-              src="/favicon.ico"
-              alt="Profile Picture"
-              width={100}
-              height={100}
-              className="rounded-full"
-            />
+            {!loading && user && (
+              <Image
+                src={`/account-page/avatar-icons/${user.avatar_index === 0 ? (lightMode ? user.avatar_index + "b" : user.avatar_index + "w") : user.avatar_index}.png`}
+                alt="Profile Picture"
+                width={100}
+                height={100}
+                className="rounded-full"
+              />
+            )}
           </button>
         </div>
         <div className="flex flex-col gap-2 justify-center p-4">
           <div className="flex flex-row gap-2">
-            <p>{username ? username : ""}</p>
+            <p>
+              {loading
+                ? ""
+                : user
+                  ? user.username.length !== 0
+                    ? DOMPurify.sanitize(user.username)
+                    : "Add a username here"
+                  : ""}
+            </p>
             <button
               onClick={() => {
                 setEditUsernameOverlay(true);
@@ -114,9 +126,18 @@ export default function Account() {
               />
             </button>
           </div>
-          <p>Joined on May 19, 2024</p>
+          <p>
+            {loading ? "" : user ? DOMPurify.sanitize(user.joined_date) : ""}
+          </p>
           <div className="flex flex-row gap-2">
-            <p>His favorite games are chess, pong, and tic-tac-toe</p>
+            <p>
+              Their favorite games are{" "}
+              {loading
+                ? "..."
+                : user
+                  ? DOMPurify.sanitize(user.favorite_games)
+                  : ""}
+            </p>
             <button
               onClick={() => {
                 setEditFavGamesOverlay(true);
@@ -136,8 +157,8 @@ export default function Account() {
           </div>
         </div>
         <div className="flex flex-col gap-2 justify-center border-l border-l-foreground/30 p-4">
-          <p>Rank: Platinum</p>
-          <p>Matches Played: 1000</p>
+          <p>Rank: {loading ? "..." : user ? user.rank : ""}</p>
+          <p>Matches Played: {loading ? "..." : user ? user.matches_played : ""}</p>
           <p className="flex flex-row items-center gap-2">
             Friends: 1000
             <button
