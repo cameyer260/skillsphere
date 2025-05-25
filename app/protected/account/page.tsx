@@ -131,7 +131,14 @@ export default function Account() {
           </p>
           <div className="flex flex-row gap-2">
             <p>
-              {loading ? "Their favorite games are..." : user ? user.favorite_games ? "Their favorite games are " + DOMPurify.sanitize(user.favorite_games) : "Add your favorite games here" : ""}
+              {loading
+                ? "Their favorite games are..."
+                : user
+                  ? user.favorite_games
+                    ? "Their favorite games are " +
+                      DOMPurify.sanitize(user.favorite_games)
+                    : "Add your favorite games here"
+                  : ""}
             </p>
             <button
               onClick={() => {
@@ -153,7 +160,9 @@ export default function Account() {
         </div>
         <div className="flex flex-col gap-2 justify-center border-l border-l-foreground/30 p-4">
           <p>Rank: {loading ? "..." : user ? user.rank : ""}</p>
-          <p>Matches Played: {loading ? "..." : user ? user.matches_played : ""}</p>
+          <p>
+            Matches Played: {loading ? "..." : user ? user.matches_played : ""}
+          </p>
           <p className="flex flex-row items-center gap-2">
             Friends: 1000
             <button
@@ -364,9 +373,18 @@ export default function Account() {
           </div>
         )}
       </div>
-      <div className="flex flex-row p-4">
+      <div className="flex flex-col p-4">
         <div className="border-b border-b-foreground/30 w-full p-4">
           <h1 className="text-2xl">Monthly Summary</h1>
+        </div>
+        <div className="flex flex-col items-center justify-center text-xl pt-6">
+          <h1>This page is currently under construction</h1>
+          <Image
+            src={`/account-page/${lightMode ? "wrenchb" : "wrenchw"}.png`}
+            width={128}
+            height={128}
+            alt="Construction icon"
+          />
         </div>
       </div>
     </div>
