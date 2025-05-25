@@ -2,10 +2,11 @@
 
 import { useTheme } from "next-themes";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useUser } from "@/app/context/UserContext";
 import DOMPurify from "dompurify";
+import _ from "lodash";
 
 export default function Account() {
   const supabase = createClient();
@@ -15,7 +16,8 @@ export default function Account() {
   const [editFavGamesOverlay, setEditFavGamesOverlay] =
     useState<boolean>(false);
   const [editPictureOverlay, setEditPictureOverlay] = useState<boolean>(false);
-  const [overallSearch, setOverallSearch] = useState<string>("");
+  const [newFriendSearch, setNewFriendSearch] = useState<string>("");
+  const [friendSearch, setFriendSearch] = useState<string>("");
   const [newUsername, setNewUsername] = useState<string>("");
   const [games, setGames] = useState<string[]>([
     "Pong",
@@ -32,6 +34,8 @@ export default function Account() {
     setMounted(true);
   }, []);
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
+  const [newFriendResult, setNewFriendResults] = useState<string[]>([]);
+  const [friendResult, setFriendResult] = useState<string[]>([]);
 
   const handleUsernameSubmit = async () => {
     try {
@@ -74,6 +78,26 @@ export default function Account() {
       return;
     }
   };
+  const handleSearchNewFriendChange = useCallback(
+    _.debounce(async function (searchTerm: string) {
+      if (searchTerm === "") {
+        setNewFriendResults([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("username")
+        .ilike("username", `%${searchTerm}%`);
+      if (data) setNewFriendResults(data.map((_) => _.username));
+    }, 400),
+    [],
+  );
+  const handleSearchFriendChange = async () => {
+    console.log(friendSearch);
+    if (friendSearch.length === 0) return;
+  };
+  const addFriend = async (i: number) => {};
+  const removeFriend = async (i: number) => {};
 
   return (
     <div className="min-h-screen px-4">
@@ -198,19 +222,30 @@ export default function Account() {
                   <input
                     type="text"
                     placeholder="username"
-                    value={overallSearch}
-                    onChange={(e) => setOverallSearch(e.target.value)}
+                    value={newFriendSearch}
+                    onChange={(e) => {
+                      setNewFriendSearch(e.target.value);
+                      handleSearchNewFriendChange(e.target.value);
+                    }}
                     className="border px-2 outline-none"
                   />
                 </div>
                 <div className="flex-1 flex flex-col justify-center items-center">
-                  <h1 className="text-xl">1000</h1>
+                  <h1 className="text-xl">{newFriendResult.length}</h1>
                   <p>Results</p>
                 </div>
               </div>
-              <div className="flex-[6] overflow-auto">
-                {Array.from({ length: 50 }).map((_, i) => (
-                  <div key={i}>Box # {i + 1}</div>
+              <div className="flex-[6] overflow-auto pt-2">
+                {newFriendResult.map((_, i) => (
+                  <div key={i} className="flex justify-between mb-1">
+                    {_}
+                    <button
+                      onClick={() => addFriend(i)}
+                      className="border rounded-lg border-foreground/30 px-2"
+                    >
+                      Add
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -222,19 +257,30 @@ export default function Account() {
                   <input
                     type="text"
                     placeholder="username"
-                    value={overallSearch}
-                    onChange={(e) => setOverallSearch(e.target.value)}
+                    value={friendSearch}
+                    onChange={(e) => {
+                      setFriendSearch(e.target.value);
+                      handleSearchFriendChange();
+                    }}
                     className="border px-2 outline-none"
                   />
                 </div>
                 <div className="flex-1 flex flex-col justify-center items-center">
-                  <h1 className="text-xl">1000</h1>
+                  <h1 className="text-xl">{friendResult.length}</h1>
                   <p>Friends</p>
                 </div>
               </div>
-              <div className="flex-[6] overflow-auto">
-                {Array.from({ length: 50 }).map((_, i) => (
-                  <div key={i}>Box # {i + 1}</div>
+              <div className="flex-[6] overflow-auto pt-2">
+                {friendResult.map((_, i) => (
+                  <div key={i} className="flex justify-between mb-1">
+                    {_}
+                    <button
+                      onClick={() => removeFriend(i)}
+                      className="border rounded-lg border-foreground/30 px-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
