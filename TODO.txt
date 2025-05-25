@@ -1,3 +1,4 @@
 - add supabase edge function for syncing new user accounts to the profiles table. current fix for the problem is inserting the profile on sucessful signups in the singup function in actions.ts, but once we add other forms of auth (sign in through google, github, etc.) this fix will not work and we will need a supabase edge function to handle it
 - edit friendships table so that there can be no duplicate pairs (same requester and receiever in any order)******
-- get useContext hook setup for fetching user data so you can populate it in the navbar and on the profile page
+- add username and link to account page to nav
+- get friends figures out on account page first

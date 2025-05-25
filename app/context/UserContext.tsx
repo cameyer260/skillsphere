@@ -55,7 +55,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           const index = Math.floor(data.rank / 10);
           setUser({
             id: user?.id,
-            username: data.username,
+            username: !data.username ? "" : data.username,
             joined_date: formatted,
             favorite_games: data.favorite_games,
             rank: `${ranks[index]} ${data.rank}`,
