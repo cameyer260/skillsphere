@@ -131,12 +131,7 @@ export default function Account() {
           </p>
           <div className="flex flex-row gap-2">
             <p>
-              Their favorite games are{" "}
-              {loading
-                ? "..."
-                : user
-                  ? DOMPurify.sanitize(user.favorite_games)
-                  : ""}
+              {loading ? "Their favorite games are..." : user ? user.favorite_games ? "Their favorite games are " + DOMPurify.sanitize(user.favorite_games) : "Add your favorite games here" : ""}
             </p>
             <button
               onClick={() => {
