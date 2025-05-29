@@ -8,6 +8,7 @@ import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export default function AuthButton() {
   const { user, loading } = useUser();
@@ -17,41 +18,52 @@ export default function AuthButton() {
     setMounted(true);
   }, []);
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
+  const pathname = usePathname();
 
   return (
     <div className="flex items-center gap-4">
-      <Link href="/protected/account" className="flex flex-row items-center">
-        {!loading && user && (
-          <Image
-            src={`/account-page/avatar-icons/${user.avatar_index === 0 ? (lightMode ? user.avatar_index + "b" : user.avatar_index + "w") : user.avatar_index}.png`}
-            alt="Profile Picture"
-            width={50}
-            height={50}
-            className="rounded-full pr-2"
-          />
-        )}
-        Hey,{" "}
-        {loading ? (
-          "..."
-        ) : user ? (
-          user.username ? (
+      {pathname !== "/sign-up" &&
+      pathname !== "/sign-in" &&
+      pathname !== "/about" ? (
+        <Link href="/protected/account" className="flex flex-row items-center">
+          {!loading && user && (
+            <Image
+              src={`/account-page/avatar-icons/${user.avatar_index === 0 ? (lightMode ? user.avatar_index + "b" : user.avatar_index + "w") : user.avatar_index}.png`}
+              alt="Profile Picture"
+              width={50}
+              height={50}
+              className="rounded-full pr-2"
+            />
+          )}
+          <>
+            Hey,{" "}
+            {loading ? (
+              "..."
+            ) : user ? (
+              user.username ? (
+                <b>
+                  <u>{DOMPurify.sanitize(user.username)}</u>
+                </b>
+              ) : (
+                <b>
+                  <u>add a username here</u>
+                </b>
+              )
+            ) : (
+              <b>
+                <u>error fetching user</u>
+              </b>
+            )}
             <b>
-              <u>{DOMPurify.sanitize(user.username)}</u>
+              <u>!</u>
             </b>
-          ) : (
-            <b>
-              <u>add a username here</u>
-            </b>
-          )
-        ) : (
-          <b>
-            <u>error fetching user</u>
-          </b>
-        )}
-        <b>
-          <u>!</u>
-        </b>
-      </Link>{" "}
+          </>
+        </Link>
+      ) : (
+        <Link href="/about" className="font-semibold">
+          About
+        </Link>
+      )}
       <form action={signOutAction}>
         <Button type="submit" variant={"outline"}>
           Sign out

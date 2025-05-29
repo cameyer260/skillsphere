@@ -9,5 +9,53 @@
 
 
 
+NEXT TODO IMPORTANT********
+- handle uploading new username and avatar and favorite games on server side. check for white spaces in username and stuff like that.
+- finish friendship db stuff
+- fix addfriend function. rewrite most of it so that it properly handles usernames in friends table
 
-- GET FRIENDS PAGE WORKING. START WITH GETTING A USESTATE TO HOLD THE VALID USERNAMES OF THE FRIENDS YOU ARE SEARCHING. UPDATE IT ON USEEFFECT.
+      <Link href="/protected/account" className="flex flex-row items-center">
+        {!loading && user && (
+          <Image
+            src={`/account-page/avatar-icons/${user.avatar_index === 0 ? (lightMode ? user.avatar_index + "b" : user.avatar_index + "w") : user.avatar_index}.png`}
+            alt="Profile Picture"
+            width={50}
+            height={50}
+            className="rounded-full pr-2"
+          />
+        )}
+        {pathname !== "/sign-up" &&
+        pathname !== "/sign-in" &&
+        pathname !== "/about" ? (
+          <>
+            Hey,{" "}
+            {loading ? (
+              "..."
+            ) : user ? (
+              user.username ? (
+                <b>
+                  <u>{DOMPurify.sanitize(user.username)}</u>
+                </b>
+              ) : (
+                <b>
+                  <u>add a username here</u>
+                </b>
+              )
+            ) : (
+              <b>
+                <u>error fetching user</u>
+              </b>
+            )}
+            <b>
+              <u>!</u>
+            </b>
+          </>
+        ) : (
+          <>
+            <Link href="/about" className="font-semibold">
+              About
+            </Link>
+          </>
+        )}
+      </Link>{" "}
+

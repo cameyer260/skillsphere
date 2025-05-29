@@ -9,7 +9,7 @@ import {
   useContext,
 } from "react";
 
-type User = {
+export type User = {
   id: string;
   username: string;
   joined_date: string;
@@ -68,10 +68,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       setLoading(false);
     };
-
-    // setup usecontext to have the users profile data and auth data be saved in global context so it can be added to the navbar and here
-
-    // now create other functions to fetch other shit (fav games, avatar, friends, rank, matches played all that), then called the functions
 
     fetchUserData();
   }, []);

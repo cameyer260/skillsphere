@@ -131,7 +131,6 @@ export const resetPasswordAction = async (formData: FormData) => {
   const { error } = await supabase.auth.updateUser({
     password: password,
   });
-
   if (error) {
     encodedRedirect(
       "error",
@@ -147,4 +146,62 @@ export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();
   return redirect("/sign-in");
+};
+
+export const addFriendAction = async (
+  username: string,
+): Promise<Error | null> => {
+  // error = failure, null = success
+  if (!username || username.length === 0)
+    return new Error("Username cannot be empty");
+  const supabase = await createClient();
+  const { data: ourUser, error: ourUserError } = await supabase.auth.getUser();
+  if (!ourUser || !ourUser.user) return new Error("Failed to add friend");
+  const { data: ourData, error: ourError } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .eq("id", ourUser.user.id)
+    .single();
+  const { data: theirData, error: theirError } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .eq("username", username)
+    .single();
+  if (ourError || theirError) return new Error("Failed to add friend");
+  // first check for an incoming friend request from this account they would like to add, if there is one, just accept it
+  const { data: incomingReqs, error: incomingRError } = await supabase
+    .from("friends")
+    .select("*")
+    .eq("receiver", ourUser.user.id)
+    .eq("requester", theirData.id)
+    .single();
+  if (incomingReqs && !incomingRError) {
+    const { data: res, error: resError } = await supabase
+      .from("friends")
+      .update({ status: "accepted" })
+      .eq("receiver", ourUser.user.id)
+      .eq("requester", theirData.id);
+    if (!resError) return null;
+    return new Error("Failed to accept request incoming request");
+  }
+  // case that there was no incoming friend req, post one to db here
+  if (!incomingReqs && incomingRError?.code === "PGRST116") {
+    const { data: res, error: resError } = await supabase
+      .from("friends")
+      .insert({
+        requester: ourUser.user.id,
+        receiver: theirData.id,
+        requester_username: ourData.username,
+        receiver_username: theirData.username,
+      });
+    if (!resError) return null;
+    return new Error("Request has already been sent");
+  }
+  return new Error("Failed to add friend");
+};
+
+export const deleteFriendAction = async (
+  username: string,
+): Promise<Error | null> => {
+  return new Error("Failed to remove friend");
 };

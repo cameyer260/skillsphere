@@ -7,10 +7,11 @@ import { createClient } from "@/utils/supabase/client";
 import { useUser } from "@/app/context/UserContext";
 import DOMPurify from "dompurify";
 import _ from "lodash";
+import { addFriendAction } from "@/app/actions";
 
 export default function Account() {
   const supabase = createClient();
-  const [nfOveraly, setNfOverlay] = useState<boolean>(false);
+  const [nfOverlay, setNfOverlay] = useState<boolean>(false);
   const [editUsernameOverlay, setEditUsernameOverlay] =
     useState<boolean>(false);
   const [editFavGamesOverlay, setEditFavGamesOverlay] =
@@ -36,6 +37,7 @@ export default function Account() {
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
   const [newFriendResult, setNewFriendResults] = useState<string[]>([]);
   const [friendResult, setFriendResult] = useState<string[]>([]);
+  const [trigger, setTrigger] = useState<boolean>(false); // trigger variable to trigger useEffect for fetching friends when a new one is added or removed
 
   const handleUsernameSubmit = async () => {
     try {
@@ -44,12 +46,19 @@ export default function Account() {
         .from("profiles")
         .update({ username: newUsername })
         .eq("id", user.id);
+      console.log(error);
+      if (error?.code === "22001")
+        throw new Error("Max length for username is 25 characters");
+      if (error?.code === "23505") throw new Error("Username is taken");
+      if (error?.code === "23514")
+        throw new Error("Username must be at least 4 characters long");
       if (error) throw new Error("Error uploading username");
     } catch (err) {
-      alert(err);
+      if (err instanceof Error) alert(err.message);
       return;
     }
   };
+
   const handleGamesSubmit = async () => {
     try {
       if (!user) throw new Error("Error getting session");
@@ -64,6 +73,7 @@ export default function Account() {
       return;
     }
   };
+
   const handlePictureSubmit = async () => {
     try {
       if (!user) throw new Error("Error getting session");
@@ -78,8 +88,9 @@ export default function Account() {
       return;
     }
   };
+
   const handleSearchNewFriendChange = useCallback(
-    _.debounce(async function (searchTerm: string) {
+    _.debounce(async function (searchTerm: string, user) {
       if (searchTerm === "") {
         setNewFriendResults([]);
         return;
@@ -87,17 +98,74 @@ export default function Account() {
       const { data } = await supabase
         .from("profiles")
         .select("username")
-        .ilike("username", `%${searchTerm}%`);
-      if (data) setNewFriendResults(data.map((_) => _.username));
+        .ilike("username", `%${searchTerm}%`)
+        .not("username", "eq", user?.username);
+      if (data) {
+        console.log(data);
+        const filtered = data
+          .filter((el) => !friendResult.includes(el.username))
+          .map((el) => el.username);
+        console.log(filtered);
+        setNewFriendResults(filtered);
+      }
     }, 400),
-    [],
+    [friendResult],
   );
+
   const handleSearchFriendChange = async () => {
-    console.log(friendSearch);
     if (friendSearch.length === 0) return;
   };
-  const addFriend = async (i: number) => {};
-  const removeFriend = async (i: number) => {};
+
+  const removeFriend = async (i: number) => {
+    if (!user) return null;
+    console.log(friendResult[i]);
+    console.log("removeFriend called");
+    console.log(user.username);
+    const { data: them, error: theirError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", friendResult[i])
+      .single();
+    if (!them) return;
+    console.log(them);
+    console.log(theirError);
+    const { data, error } = await supabase
+      .from("friends")
+      .delete()
+      .or(
+        `and(requester.eq.${them.id},receiver.eq.${user.id}),and(requester.eq.${user.id},receiver.eq.${them.id})`,
+      );
+    console.log(data);
+    console.log(error);
+    setTrigger(!trigger);
+  };
+
+  // use effect for fetching friends
+  useEffect(() => {
+    if (!user) return;
+    const fetchFriends = async () => {
+      const { data, error } = await supabase
+        .from("friends")
+        .select("*")
+        .eq("status", "accepted")
+        .or(`requester.eq.${user.id},receiver.eq.${user.id}`);
+      if (error) {
+        alert("There was an error fetching your friends");
+        return;
+      }
+      setFriendResult(
+        data.map((el) => {
+          if (el.receiver_username !== user.username) {
+            return el.receiver_username;
+          } else return el.requester_username;
+        }),
+      );
+      setTimeout(() => {
+        handleSearchNewFriendChange("", user); // update new friend search so that we do not accidentally keep displaying or not display a new or old friend
+      }, 0);
+    };
+    fetchFriends();
+  }, [trigger]);
 
   return (
     <div className="min-h-screen px-4">
@@ -192,6 +260,7 @@ export default function Account() {
             <button
               onClick={() => {
                 setNfOverlay(true);
+                setTrigger(true);
                 setEditFavGamesOverlay(false);
                 setEditPictureOverlay(false);
                 setEditUsernameOverlay(false);
@@ -207,7 +276,7 @@ export default function Account() {
           </p>
         </div>
 
-        {nfOveraly && (
+        {nfOverlay && user?.username && (
           <div className="absolute w-1/2 h-3/4 border backdrop-blur-md flex flex-row">
             <button
               className="absolute px-4 border-l border-b right-0"
@@ -225,7 +294,7 @@ export default function Account() {
                     value={newFriendSearch}
                     onChange={(e) => {
                       setNewFriendSearch(e.target.value);
-                      handleSearchNewFriendChange(e.target.value);
+                      handleSearchNewFriendChange(e.target.value, user);
                     }}
                     className="border px-2 outline-none"
                   />
@@ -237,15 +306,30 @@ export default function Account() {
               </div>
               <div className="flex-[6] overflow-auto pt-2">
                 {newFriendResult.map((_, i) => (
-                  <div key={i} className="flex justify-between mb-1">
+                  <form
+                    key={i}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!newFriendResult[i]) return;
+                      const addFriend = async () => {
+                        const error = await addFriendAction(newFriendResult[i]);
+                        if (error) {
+                          alert(error.message);
+                        } else {
+                          setTrigger(!trigger);
+                        }
+                      };
+                      addFriend();
+                    }}
+                    className="flex justify-between mb-1"
+                  >
                     {_}
-                    <button
-                      onClick={() => addFriend(i)}
+                    <input
+                      type="submit"
+                      value="Submit"
                       className="border rounded-lg border-foreground/30 px-2"
-                    >
-                      Add
-                    </button>
-                  </div>
+                    />
+                  </form>
                 ))}
               </div>
             </div>
@@ -284,6 +368,20 @@ export default function Account() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {nfOverlay && user?.username.length === 0 && (
+          <div className="absolute w-1/2 h-3/4 border backdrop-blur-md flex flex-row items-center justify-center text-2xl">
+            <button
+              onClick={() => setNfOverlay(false)}
+              className="absolute top-0 left-0 px-4 border-r border-b text-base"
+            >
+              X
+            </button>
+            <h1>
+              You need to set your username before trying to manage friends
+            </h1>
           </div>
         )}
 
