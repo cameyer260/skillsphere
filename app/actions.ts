@@ -199,9 +199,3 @@ export const addFriendAction = async (
   }
   return new Error("Failed to add friend");
 };
-
-export const deleteFriendAction = async (
-  username: string,
-): Promise<Error | null> => {
-  return new Error("Failed to remove friend");
-};

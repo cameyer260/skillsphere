@@ -3,7 +3,7 @@
 import { signOutAction } from "@/app/actions";
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { useUser } from "@/app/context/UserContext";
+import { useGlobal } from "@/app/context/GlobalContext";
 import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useTheme } from "next-themes";
@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export default function AuthButton() {
-  const { user, loading } = useUser();
+  const { user, loading } = useGlobal();
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
   useEffect(() => {

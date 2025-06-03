@@ -3,7 +3,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { GeistSans } from "geist/font/sans";
 import { ThemeProvider } from "next-themes";
 import { Analytics } from "@vercel/analytics/react";
-import { UserProvider } from "./context/UserContext";
+import { GlobalProvider } from "./context/GlobalContext";
 import Link from "next/link";
 import "./globals.css";
 
@@ -31,7 +31,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <UserProvider>
+          <GlobalProvider>
             <div className="w-full flex justify-center border-b border-b-foreground/30 min-h-16">
               <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-m">
                 <div className="flex gap-5 items-center font-semibold">
@@ -45,7 +45,7 @@ export default function RootLayout({
             </div>
             {children}
             <Analytics />
-          </UserProvider>
+          </GlobalProvider>
         </ThemeProvider>
       </body>
     </html>

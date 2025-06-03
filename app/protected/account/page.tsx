@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { useUser } from "@/app/context/UserContext";
+import { useGlobal } from "@/app/context/GlobalContext";
 import DOMPurify from "dompurify";
 import _ from "lodash";
 import { addFriendAction } from "@/app/actions";
@@ -30,14 +30,14 @@ export default function Account() {
   // theme stuff
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
-  const { user, loading } = useUser();
+  const { user, friends, loading, trigger, setTrigger } = useGlobal();
   useEffect(() => {
     setMounted(true);
   }, []);
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
   const [newFriendResult, setNewFriendResults] = useState<string[]>([]);
-  const [friendResult, setFriendResult] = useState<string[]>([]);
-  const [trigger, setTrigger] = useState<boolean>(false); // trigger variable to trigger useEffect for fetching friends when a new one is added or removed
+  const [frOverlay, setFrOverlay] = useState<boolean>(false); // use to handle showing current friends or friend requests in nf overlay
+  const [frResult, setFrResult] = useState<string[]>([]);
 
   const handleUsernameSubmit = async () => {
     try {
@@ -103,69 +103,93 @@ export default function Account() {
       if (data) {
         console.log(data);
         const filtered = data
-          .filter((el) => !friendResult.includes(el.username))
+          .filter((el) => !friends?.includes(el.username))
           .map((el) => el.username);
         console.log(filtered);
         setNewFriendResults(filtered);
       }
     }, 400),
-    [friendResult],
+    [friends],
   );
 
   const handleSearchFriendChange = async () => {
     if (friendSearch.length === 0) return;
+    // FINISH THIS METHOD
   };
 
   const removeFriend = async (i: number) => {
     if (!user) return null;
-    console.log(friendResult[i]);
+    if (!friends) return null;
+    console.log(friends[i]);
     console.log("removeFriend called");
     console.log(user.username);
-    const { data: them, error: theirError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", friendResult[i])
-      .single();
-    if (!them) return;
-    console.log(them);
-    console.log(theirError);
-    const { data, error } = await supabase
+    // try different approach
+    console.log(friends[i].id);
+    console.log(user.id);
+    const { error } = await supabase
       .from("friends")
       .delete()
       .or(
-        `and(requester.eq.${them.id},receiver.eq.${user.id}),and(requester.eq.${user.id},receiver.eq.${them.id})`,
+        `and(requester.eq.${friends[i].id},receiver.eq.${user.id}),and(requester.eq.${user.id},receiver.eq.${friends[i].id})`
       );
-    console.log(data);
-    console.log(error);
+    setTrigger(!trigger);
+    if (error) alert("There was an error trying to remove the friend. Please try again later.");
+  };
+
+  const denyFr = async (i: number) => {
+    if (!user) return null;
+    const { data: them, error: theirError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", frResult[i])
+      .single();
+    if (!them) return;
+    const { data, error } = await supabase
+      .from("friends")
+      .delete()
+      .eq("receiver", user.id)
+      .eq("requester", them.id);
+    if (error) alert("Failed to deny request");
     setTrigger(!trigger);
   };
 
-  // use effect for fetching friends
+  const acceptFr = async (i: number) => {
+    if (!user) return null;
+    const { data: them, error: theirError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", frResult[i])
+      .single();
+    if (!them) return;
+    const { data, error } = await supabase
+      .from("friends")
+      .update({ status: "accepted" })
+      .eq("receiver", user.id)
+      .eq("requester", them.id);
+    if (error) alert("Failed to accept request");
+    setTrigger(!trigger);
+  };
+
+  // use effect for fetching friend requests
   useEffect(() => {
     if (!user) return;
-    const fetchFriends = async () => {
-      const { data, error } = await supabase
+    const fetchRequests = async () => {
+      const { data: frData, error: frError } = await supabase
         .from("friends")
         .select("*")
-        .eq("status", "accepted")
-        .or(`requester.eq.${user.id},receiver.eq.${user.id}`);
-      if (error) {
-        alert("There was an error fetching your friends");
+        .eq("status", "pending")
+        .eq("receiver", user.id);
+      if (frError) {
+        alert("There was an error fetching your friend requests");
         return;
       }
-      setFriendResult(
-        data.map((el) => {
-          if (el.receiver_username !== user.username) {
-            return el.receiver_username;
-          } else return el.requester_username;
-        }),
-      );
+      setFrResult(frData.map((el) => el.requester_username));
       setTimeout(() => {
         handleSearchNewFriendChange("", user); // update new friend search so that we do not accidentally keep displaying or not display a new or old friend
       }, 0);
     };
-    fetchFriends();
-  }, [trigger]);
+    fetchRequests();
+  }, [trigger, user, friends]);
 
   return (
     <div className="min-h-screen px-4">
@@ -256,7 +280,7 @@ export default function Account() {
             Matches Played: {loading ? "..." : user ? user.matches_played : ""}
           </p>
           <p className="flex flex-row items-center gap-2">
-            Friends: 1000
+            Friends: {friends?.length}
             <button
               onClick={() => {
                 setNfOverlay(true);
@@ -277,7 +301,7 @@ export default function Account() {
         </div>
 
         {nfOverlay && user?.username && (
-          <div className="absolute w-1/2 h-3/4 border backdrop-blur-md flex flex-row">
+          <div className="absolute w-3/5 h-3/4 border backdrop-blur-md flex flex-row">
             <button
               className="absolute px-4 border-l border-b right-0"
               onClick={() => setNfOverlay(false)}
@@ -323,7 +347,7 @@ export default function Account() {
                     }}
                     className="flex justify-between mb-1"
                   >
-                    {_}
+                    {DOMPurify.sanitize(_)}
                     <input
                       type="submit"
                       value="Submit"
@@ -337,7 +361,20 @@ export default function Account() {
             <div className="flex-1 flex flex-col p-2">
               <div className="flex-1 border-b flex flex-row">
                 <div className="flex-[2] flex flex-col px-2 gap-1 justify-center">
-                  <h1 className="text-xl">Your Friends</h1>
+                  <div className="flex flex-row gap-2">
+                    <button
+                      className={`text-xl ${frOverlay && "text-foreground/30"}`}
+                      onClick={() => setFrOverlay(!frOverlay)}
+                    >
+                      Your Friends
+                    </button>
+                    <button
+                      className={`text-xl ${!frOverlay && "text-foreground/30"}`}
+                      onClick={() => setFrOverlay(!frOverlay)}
+                    >
+                      Friend Requests
+                    </button>
+                  </div>
                   <input
                     type="text"
                     placeholder="username"
@@ -350,22 +387,51 @@ export default function Account() {
                   />
                 </div>
                 <div className="flex-1 flex flex-col justify-center items-center">
-                  <h1 className="text-xl">{friendResult.length}</h1>
-                  <p>Friends</p>
+                  {!frOverlay ? (
+                    <>
+                      <h1 className="text-xl">{friends?.length}</h1>
+                      <p>Friends</p>
+                    </>
+                  ) : (
+                    <>
+                      <h1 className="text-xl">{frResult.length}</h1>
+                      <p>Friend Requests</p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex-[6] overflow-auto pt-2">
-                {friendResult.map((_, i) => (
-                  <div key={i} className="flex justify-between mb-1">
-                    {_}
-                    <button
-                      onClick={() => removeFriend(i)}
-                      className="border rounded-lg border-foreground/30 px-2"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                {!frOverlay
+                  ? friends?.map((_, i) => (
+                      <div key={i} className="flex justify-between mb-1">
+                        {DOMPurify.sanitize(_.username)}
+                        <button
+                          onClick={() => removeFriend(i)}
+                          className="border rounded-lg border-foreground/30 px-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  : frResult.map((_, i) => (
+                      <div key={i} className="flex justify-between mb-1">
+                        {DOMPurify.sanitize(_)}
+                        <div>
+                          <button
+                            onClick={() => denyFr(i)}
+                            className="border rounded-lg border-foreground/30 px-2"
+                          >
+                            Deny
+                          </button>{" "}
+                          <button
+                            onClick={() => acceptFr(i)}
+                            className="border rounded-lg border-foreground/30 px-2"
+                          >
+                            Accept
+                          </button>
+                        </div>
+                      </div>
+                    ))}
               </div>
             </div>
           </div>
