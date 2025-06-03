@@ -47,7 +47,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   const supabase = createClient();
 
   useEffect(() => {
-    if (pathname === "/sign-in" || pathname === "/sign-up") {
+    if (pathname === "/sign-in" || pathname === "/sign-up" || pathname === "/about") {
       return;
     }
     const fetchData = async () => {
