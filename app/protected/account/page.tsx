@@ -120,12 +120,6 @@ export default function Account() {
   const removeFriend = async (i: number) => {
     if (!user) return null;
     if (!friends) return null;
-    console.log(friends[i]);
-    console.log("removeFriend called");
-    console.log(user.username);
-    // try different approach
-    console.log(friends[i].id);
-    console.log(user.id);
     const { error } = await supabase
       .from("friends")
       .delete()

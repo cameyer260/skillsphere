@@ -1,12 +1,15 @@
-"use client"
+"use client";
 
 import { useState, useEffect, MouseEvent } from "react";
 import Link from "next/link";
 import { Users } from "lucide-react";
+import { useGlobal } from "@/app/context/GlobalContext";
+import DOMPurify from "dompurify";
 
 export default function FriendsSidebar() {
   const [biggerScreen, setBiggerScreen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const { user, friends, loading, trigger, setTrigger } = useGlobal();
 
   useEffect(() => {
     // Function to check screen size
@@ -20,10 +23,6 @@ export default function FriendsSidebar() {
 
     // Cleanup event listener
     return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
-
-  useEffect(() => {
-    // Fetch the users friends
   }, []);
 
   const toggleSidebar = () => {
@@ -44,42 +43,21 @@ export default function FriendsSidebar() {
         <h1 className="text-3xl border-b border-b-foreground/30 py-2">
           Friends
         </h1>
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
-        {/* <Link href={"/DNE"}>catalina</Link> */}
-        {/* <Link href={"/DNE"}>christopher</Link> */}
-        {/* <Link href={"/DNE"}>leon</Link> */}
-        {/* <Link href={"/DNE"}>paola</Link> */}
+        {friends?.map((el, i) => (
+          <div
+            className="flex border-b border-foreground/30 justify-between h-14"
+            key={i}
+          >
+            <Link href="/DNE" className="flex items-center">
+              {DOMPurify.sanitize(el.username)}
+            </Link>
+            {/**
+              <button onClick={() => console.log("start game")}>
+                Start game
+              </button>
+            */}{" "}
+          </div>
+        ))}
       </div>
     );
   }
@@ -113,30 +91,11 @@ export default function FriendsSidebar() {
               </button>
             </div>
             <div className="flex flex-col [&>a]:border-b [&>a]:border-b-foreground/10 [&>a]:py-2 [&>a]:px-4">
-              <Link href={"/DNE"}>catalina</Link>
-              <Link href={"/DNE"}>christopher</Link>
-              <Link href={"/DNE"}>leon</Link>
-              <Link href={"/DNE"}>paola</Link>
-              <Link href={"/DNE"}>catalina</Link>
-              <Link href={"/DNE"}>christopher</Link>
-              <Link href={"/DNE"}>leon</Link>
-              <Link href={"/DNE"}>paola</Link>
-              <Link href={"/DNE"}>catalina</Link>
-              <Link href={"/DNE"}>christopher</Link>
-              <Link href={"/DNE"}>leon</Link>
-              <Link href={"/DNE"}>paola</Link>
-              <Link href={"/DNE"}>catalina</Link>
-              <Link href={"/DNE"}>christopher</Link>
-              <Link href={"/DNE"}>leon</Link>
-              <Link href={"/DNE"}>paola</Link>
-              <Link href={"/DNE"}>catalina</Link>
-              <Link href={"/DNE"}>christopher</Link>
-              <Link href={"/DNE"}>leon</Link>
-              <Link href={"/DNE"}>paola</Link>
-              <Link href={"/DNE"}>catalina</Link>
-              <Link href={"/DNE"}>christopher</Link>
-              <Link href={"/DNE"}>leon</Link>
-              <Link href={"/DNE"}>paola</Link>
+              {friends?.map((el, i) => (
+                <div className="flex" key={i}>
+                  <Link href="/DNE">{DOMPurify.sanitize(el.username)}</Link>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -144,18 +103,18 @@ export default function FriendsSidebar() {
 
       {/* Add animation for the sidebar */}
       <style jsx global>{`
-				@keyframes slide-in-left {
-					0% {
-						transform: translateX(-100%);
-					}
-					100% {
-						transform: translateX(0);
-					}
-				}
-				.animate-slide-in-left {
-					animation: slide-in-left 0.3s ease-out;
-				}
-			`}</style>
+        @keyframes slide-in-left {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(0);
+          }
+        }
+        .animate-slide-in-left {
+          animation: slide-in-left 0.3s ease-out;
+        }
+      `}</style>
     </>
   );
 }

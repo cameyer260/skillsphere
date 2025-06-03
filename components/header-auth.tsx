@@ -36,27 +36,22 @@ export default function AuthButton() {
             />
           )}
           <>
-            Hey,{" "}
-            {loading ? (
-              "..."
-            ) : user ? (
-              user.username ? (
-                <b>
-                  <u>{DOMPurify.sanitize(user.username)}</u>
-                </b>
-              ) : (
-                <b>
-                  <u>add a username here</u>
-                </b>
-              )
-            ) : (
-              <b>
-                <u>error fetching user</u>
-              </b>
-            )}
-            <b>
-              <u>!</u>
-            </b>
+            {!loading ? (
+              user ? (
+                user.username ? (
+                  <>
+                    Hey,{" "}
+                    <b>
+                      <u>{DOMPurify.sanitize(user.username)}!</u>
+                    </b>
+                  </>
+                ) : (
+                  <b>
+                    <u>add a username here</u>
+                  </b>
+                )
+              ) : null
+            ) : null}
           </>
         </Link>
       ) : (

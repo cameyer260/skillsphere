@@ -10,5 +10,4 @@
 
 
 NEXT TODO IMPORTANT********
-- get friends to show up on sidebar on home page (DO THIS BY CREATING GLOBAL CONTEXT W/ USE EFFECT FOR FETCHING FREINDS AND REQUESTS)
 - finish friends search method
