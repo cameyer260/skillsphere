@@ -46,11 +46,12 @@ export default function Account() {
         .from("profiles")
         .update({ username: newUsername })
         .eq("id", user.id);
-      if (error?.code === "22001")
+      console.log(error);
+      if (error?.code === "22001") // violates varchar len limit
         throw new Error("Max length for username is 25 characters");
-      if (error?.code === "23505") throw new Error("Username is taken");
-      if (error?.code === "23514")
-        throw new Error("Username must be at least 4 characters long");
+      if (error?.code === "23505") throw new Error("Username is taken"); // violates our unique constraint
+      if (error?.code === "23514") // violates our username_format constraint
+        throw new Error("Username must be 3-25 characters long, start with a letter, and only include letters, numbers, dashes, and underscores.");
       if (error) throw new Error("Error uploading username");
     } catch (err) {
       if (err instanceof Error) alert(err.message);

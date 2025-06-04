@@ -1,10 +1,7 @@
 - add supabase edge function for syncing new user accounts to the profiles table. current fix for the problem is inserting the profile on sucessful signups in the singup function in actions.ts, but once we add other forms of auth (sign in through google, github, etc.) this fix will not work and we will need a supabase edge function to handle it
-- edit friendships table so that there can be no duplicate pairs (same requester and receiever in any order)******
-- get friends figures out on account page first
 - fix signup flow, make it smoother and less clunky
 - add on temporary guest account and allow them to play live against friends or any of the games for a limit amount of time (https://supabase.com/docs/guides/auth/auth-anonymous)
-- consider changing the user useContext object to hold useStates instead so that the frontend display of them updates without having to refresh. only really is a problem when the user signs in and is forwarded to the page
-
+- add supabase edge function to rate limit to prevent spam
 
 
 
@@ -12,3 +9,9 @@
 NEXT TODO IMPORTANT********
 - finish friends search method
 - make this whole site publicly accessible. delay requiring sign-in/sign-up for as long as possible
+
+
+- FOR PROFILE PAGE DO THIS NEXT
+- add a joined at and friends count column to profiles, properly display them on frontend
+- if the user tries to visit their own page, just redirect them to the account page
+- add an add friend button if you are not already friends, add other polishing details

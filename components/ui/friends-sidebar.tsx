@@ -48,7 +48,7 @@ export default function FriendsSidebar() {
             className="flex border-b border-foreground/30 justify-between h-14"
             key={i}
           >
-            <Link href="/DNE" className="flex items-center">
+            <Link href={`/protected/profile?username=${el.username}`} className="flex items-center">
               {DOMPurify.sanitize(el.username)}
             </Link>
             {/**
@@ -93,7 +93,7 @@ export default function FriendsSidebar() {
             <div className="flex flex-col [&>a]:border-b [&>a]:border-b-foreground/10 [&>a]:py-2 [&>a]:px-4">
               {friends?.map((el, i) => (
                 <div className="flex" key={i}>
-                  <Link href="/DNE">{DOMPurify.sanitize(el.username)}</Link>
+                  <Link href={`/protected/profile?username=${el.username}`}>{DOMPurify.sanitize(el.username)}</Link>
                 </div>
               ))}
             </div>
