@@ -46,7 +46,6 @@ export default function Account() {
         .from("profiles")
         .update({ username: newUsername })
         .eq("id", user.id);
-      console.log(error);
       if (error?.code === "22001")
         throw new Error("Max length for username is 25 characters");
       if (error?.code === "23505") throw new Error("Username is taken");

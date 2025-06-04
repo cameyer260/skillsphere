@@ -11,3 +11,4 @@
 
 NEXT TODO IMPORTANT********
 - finish friends search method
+- make this whole site publicly accessible. delay requiring sign-in/sign-up for as long as possible

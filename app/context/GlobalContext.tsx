@@ -29,6 +29,7 @@ export type Friend = {
 type GlobalContextType = {
   user: User | null;
   friends: Friend[] | null;
+  isMobile: boolean;
   loading: boolean;
   trigger: boolean;
   setTrigger: React.Dispatch<React.SetStateAction<boolean>>;
@@ -41,10 +42,20 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<User | null>(null);
   const [friends, setFriends] = useState<Friend[] | null>(null);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [trigger, setTrigger] = useState<boolean>(false);
 
   const supabase = createClient();
+
+	// useEffect to detect mobile users
+	useEffect(() => {
+		// Check for touch points - primary indicator
+		const touchPoints = navigator.maxTouchPoints || 0;
+		const isTouchPrimary = touchPoints > 2;
+
+		setIsMobile(isTouchPrimary);
+	}, []);
 
   useEffect(() => {
     if (pathname === "/sign-in" || pathname === "/sign-up" || pathname === "/about") {
@@ -131,7 +142,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <GlobalContext.Provider
-      value={{ user, friends, loading, trigger, setTrigger }}
+      value={{ user, friends, loading, trigger, setTrigger, isMobile }}
     >
       {children}
     </GlobalContext.Provider>
