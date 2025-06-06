@@ -116,21 +116,14 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
           avatar_index: profile.avatar_index,
         });
       }
-      const { data: friends, error: friendsError } = await supabase
-        .from("friends")
-        .select("*")
-        .eq("status", "accepted")
-        .or(`requester.eq.${rawUser.id},receiver.eq.${rawUser.id}`);
+      const { data: friends, error: friendsError} = await supabase.rpc('get_friends_profiles', {});
       if (!friendsError) {
         setFriends(
-          friends.map((el, i) => {
+          friends.map((el: Friend) => {
             return {
-              id: rawUser.id === el.requester ? el.receiver : el.requester,
-              username:
-                profile.username === el.requester_username
-                  ? el.receiver_username
-                  : el.requester_username,
-              avatar_index: rawUser.id === el.requester ? el.receiver_avatar_index : el.requester_avatar_index,
+              id: el.id,
+              username: el.username,
+              avatar_index: el.avatar_index,
             };
           }),
         );

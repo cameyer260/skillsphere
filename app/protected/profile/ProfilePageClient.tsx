@@ -90,6 +90,7 @@ export default function ProfilePageClient() {
         month: "long",
         day: "numeric",
       });
+      const { data: fCount, error: fcError } = await supabase.rpc("get_friends_count", { user_id: data.id });
       setProfile({
         id: data.id,
         username: data.username,
@@ -98,7 +99,7 @@ export default function ProfilePageClient() {
         rank: data.rank,
         matches_played: data.matches_played,
         joined_date: formatted,
-        friends_count: data.friends_count,
+        friends_count: fCount && !fcError && fCount,
       });
       setLocalLoading(false);
     };
@@ -131,7 +132,11 @@ export default function ProfilePageClient() {
               removeFriend();
             }}
           >
-            <input type="submit" value="Remove Friend" />
+            <input
+              className="cursor-pointer"
+              type="submit"
+              value="Remove Friend"
+            />
           </form>
         );
       case false:
@@ -153,7 +158,11 @@ export default function ProfilePageClient() {
               addFriend();
             }}
           >
-            <input type="submit" value="Add Friend" />
+            <input
+              className="cursor-pointer"
+              type="submit"
+              value="Add Friend"
+            />
           </form>
         );
       case "AcceptOrReject":
