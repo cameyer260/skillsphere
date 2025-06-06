@@ -5,11 +5,20 @@ import Link from "next/link";
 import { Users } from "lucide-react";
 import { useGlobal } from "@/app/context/GlobalContext";
 import DOMPurify from "dompurify";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 
 export default function FriendsSidebar() {
   const [biggerScreen, setBiggerScreen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { user, friends, loading, trigger, setTrigger } = useGlobal();
+  // theme stuff
+  const [mounted, setMounted] = useState(false);
+  const { theme, resolvedTheme } = useTheme();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
 
   useEffect(() => {
     // Function to check screen size
@@ -48,8 +57,18 @@ export default function FriendsSidebar() {
             className="flex border-b border-foreground/30 justify-between h-14"
             key={i}
           >
-            <Link href={`/protected/profile?username=${el.username}`} className="flex items-center">
+            <Link
+              href={`/protected/profile?username=${el.username}`}
+              className="flex w-full items-center justify-between"
+            >
               {DOMPurify.sanitize(el.username)}
+              <Image
+                src={`/account-page/avatar-icons/${el.avatar_index === 0 ? (lightMode ? el.avatar_index + "b" : el.avatar_index + "w") : el.avatar_index}.png`}
+                alt="Profile Picture"
+                width={50}
+                height={50}
+                className="rounded-full"
+              />
             </Link>
             {/**
               <button onClick={() => console.log("start game")}>
@@ -93,7 +112,9 @@ export default function FriendsSidebar() {
             <div className="flex flex-col [&>a]:border-b [&>a]:border-b-foreground/10 [&>a]:py-2 [&>a]:px-4">
               {friends?.map((el, i) => (
                 <div className="flex" key={i}>
-                  <Link href={`/protected/profile?username=${el.username}`}>{DOMPurify.sanitize(el.username)}</Link>
+                  <Link href={`/protected/profile?username=${el.username}`}>
+                    {DOMPurify.sanitize(el.username)}
+                  </Link>
                 </div>
               ))}
             </div>

@@ -8,6 +8,7 @@ import { useGlobal } from "@/app/context/GlobalContext";
 import DOMPurify from "dompurify";
 import _ from "lodash";
 import { addFriendAction } from "@/app/actions";
+import Link from "next/link";
 
 export default function Account() {
   const supabase = createClient();
@@ -47,11 +48,15 @@ export default function Account() {
         .update({ username: newUsername })
         .eq("id", user.id);
       console.log(error);
-      if (error?.code === "22001") // violates varchar len limit
+      if (error?.code === "22001")
+        // violates varchar len limit
         throw new Error("Max length for username is 25 characters");
       if (error?.code === "23505") throw new Error("Username is taken"); // violates our unique constraint
-      if (error?.code === "23514") // violates our username_format constraint
-        throw new Error("Username must be 3-25 characters long, start with a letter, and only include letters, numbers, dashes, and underscores.");
+      if (error?.code === "23514")
+        // violates our username_format constraint
+        throw new Error(
+          "Username must be 3-25 characters long, start with a letter, and only include letters, numbers, dashes, and underscores.",
+        );
       if (error) throw new Error("Error uploading username");
     } catch (err) {
       if (err instanceof Error) alert(err.message);
@@ -124,10 +129,13 @@ export default function Account() {
       .from("friends")
       .delete()
       .or(
-        `and(requester.eq.${friends[i].id},receiver.eq.${user.id}),and(requester.eq.${user.id},receiver.eq.${friends[i].id})`
+        `and(requester.eq.${friends[i].id},receiver.eq.${user.id}),and(requester.eq.${user.id},receiver.eq.${friends[i].id})`,
       );
     setTrigger(!trigger);
-    if (error) alert("There was an error trying to remove the friend. Please try again later.");
+    if (error)
+      alert(
+        "There was an error trying to remove the friend. Please try again later.",
+      );
   };
 
   const denyFr = async (i: number) => {
@@ -148,18 +156,10 @@ export default function Account() {
   };
 
   const acceptFr = async (i: number) => {
-    if (!user) return null;
-    const { data: them, error: theirError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", frResult[i])
-      .single();
-    if (!them) return;
-    const { data, error } = await supabase
-      .from("friends")
-      .update({ status: "accepted" })
-      .eq("receiver", user.id)
-      .eq("requester", them.id);
+    console.log(user);
+    console.log(frResult[i]);
+    if (!user || !frResult[i]) return null;
+    const error = await addFriendAction(frResult[i]);
     if (error) alert("Failed to accept request");
     setTrigger(!trigger);
   };
@@ -237,7 +237,11 @@ export default function Account() {
             </button>
           </div>
           <p>
-            {loading ? "" : user ? DOMPurify.sanitize(user.joined_date) : ""}
+            {loading
+              ? ""
+              : user
+                ? `Joined on ${DOMPurify.sanitize(user.joined_date)}`
+                : ""}
           </p>
           <div className="flex flex-row gap-2">
             <p>
@@ -324,30 +328,39 @@ export default function Account() {
               </div>
               <div className="flex-[6] overflow-auto pt-2">
                 {newFriendResult.map((_, i) => (
-                  <form
-                    key={i}
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!newFriendResult[i]) return;
-                      const addFriend = async () => {
-                        const error = await addFriendAction(newFriendResult[i]);
-                        if (error) {
-                          alert(error.message);
-                        } else {
-                          setTrigger(!trigger);
-                        }
-                      };
-                      addFriend();
-                    }}
-                    className="flex justify-between mb-1"
-                  >
-                    {DOMPurify.sanitize(_)}
-                    <input
-                      type="submit"
-                      value="Submit"
-                      className="border rounded-lg border-foreground/30 px-2"
-                    />
-                  </form>
+                  <div key={i} className="flex justify-between">
+                    {" "}
+                    <Link
+                      className="text-left"
+                      href={`/protected/profile?username=${_}`}
+                    >
+                      {DOMPurify.sanitize(_)}
+                    </Link>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!newFriendResult[i]) return;
+                        const addFriend = async () => {
+                          const error = await addFriendAction(
+                            newFriendResult[i],
+                          );
+                          if (error) {
+                            alert(error.message);
+                          } else {
+                            setTrigger(!trigger);
+                          }
+                        };
+                        addFriend();
+                      }}
+                      className="flex justify-between mb-1"
+                    >
+                      <input
+                        type="submit"
+                        value="Submit"
+                        className="border rounded-lg border-foreground/30 px-2 cursor-pointer"
+                      />
+                    </form>
+                  </div>
                 ))}
               </div>
             </div>
@@ -398,7 +411,11 @@ export default function Account() {
                 {!frOverlay
                   ? friends?.map((_, i) => (
                       <div key={i} className="flex justify-between mb-1">
-                        {DOMPurify.sanitize(_.username)}
+                        <Link
+                          href={`/protected/profile?username=${_.username}`}
+                        >
+                          {DOMPurify.sanitize(_.username)}
+                        </Link>
                         <button
                           onClick={() => removeFriend(i)}
                           className="border rounded-lg border-foreground/30 px-2"
@@ -409,7 +426,9 @@ export default function Account() {
                     ))
                   : frResult.map((_, i) => (
                       <div key={i} className="flex justify-between mb-1">
-                        {DOMPurify.sanitize(_)}
+                        <Link href={`/protected/profile?username=${_}`}>
+                          {DOMPurify.sanitize(_)}
+                        </Link>
                         <div>
                           <button
                             onClick={() => denyFr(i)}

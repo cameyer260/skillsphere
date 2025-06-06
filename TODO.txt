@@ -2,7 +2,9 @@
 - fix signup flow, make it smoother and less clunky
 - add on temporary guest account and allow them to play live against friends or any of the games for a limit amount of time (https://supabase.com/docs/guides/auth/auth-anonymous)
 - add supabase edge function to rate limit to prevent spam
+- maybe just remove favorite games, or add safety that does not allow users to just add whatever they want to it
 
+- lock down the favorite games field on profiles so users cannot enter whatever into it remove it
 
 
 
@@ -11,7 +13,7 @@ NEXT TODO IMPORTANT********
 - make this whole site publicly accessible. delay requiring sign-in/sign-up for as long as possible
 
 
-- FOR PROFILE PAGE DO THIS NEXT
-- add a joined at and friends count column to profiles, properly display them on frontend
-- if the user tries to visit their own page, just redirect them to the account page
-- add an add friend button if you are not already friends, add other polishing details
+- IMMEDIATELY FIX THIS FIRST
+- LOCK DOWN FRIENDS ACCEPT/REJECT. MAKE IT SO THAT THE RECEIVER CANNOT ALSO CHANGE THE USERNAMES, AVATARS, ETC OF THE FRIENDSHIP
+- FIX ALL THE SHITTING FUNCTIONS YOU MADE THAT ARE SUPPOSED TO SYNC THE AVATAR INDEX TO THE FRIENDS TABLE ON CHANGES, THEY ONLY HALF WORK 
+- FIX THE SHITTY FRIENDS COUNT SYNC THEY ALSO ONLY HALF WORK

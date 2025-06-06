@@ -17,13 +17,13 @@ export type User = {
   favorite_games: string;
   rank: string;
   matches_played: number;
-  friends: number; // for now a number but eventually an array of friend objects
   avatar_index: number;
 };
 
 export type Friend = {
   id: string;
   username: string;
+  avatar_index: number;
 };
 
 type GlobalContextType = {
@@ -113,7 +113,6 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
           favorite_games: profile.favorite_games,
           rank: `${ranks[index]} ${profile.rank}`,
           matches_played: profile.matches_played,
-          friends: 1000,
           avatar_index: profile.avatar_index,
         });
       }
@@ -131,12 +130,13 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
                 profile.username === el.requester_username
                   ? el.receiver_username
                   : el.requester_username,
+              avatar_index: rawUser.id === el.requester ? el.receiver_avatar_index : el.requester_avatar_index,
             };
           }),
         );
       }
+      setLoading(false);
     };
-    setLoading(false);
     fetchData();
   }, [trigger, pathname]);
 
