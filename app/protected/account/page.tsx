@@ -82,7 +82,8 @@ export default function Account() {
   const handlePictureSubmit = async () => {
     try {
       if (!user) throw new Error("Error getting session");
-      if (!clickedAvatar && clickedAvatar !== 0) throw new Error("No avatar has been selected");
+      if (!clickedAvatar && clickedAvatar !== 0)
+        throw new Error("No avatar has been selected");
       const { error } = await supabase
         .from("profiles")
         .update({ avatar_index: clickedAvatar + 1 })
@@ -177,7 +178,16 @@ export default function Account() {
         alert("There was an error fetching your friend requests");
         return;
       }
-      setFrResult(frData.map((el) => el.requester_username));
+      const ids = frData.map((el) => el.requester);
+      const { data: frProfiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", ids);
+      if (profileError) {
+        alert ("There was an error fetching the username of the friend request");
+        return;
+      }
+      setFrResult(frProfiles.map((el) => el.username));
       setTimeout(() => {
         handleSearchNewFriendChange("", user); // update new friend search so that we do not accidentally keep displaying or not display a new or old friend
       }, 0);
