@@ -30,29 +30,12 @@ export const signUpAction = async (formData: FormData) => {
   if (error) {
     console.error(error.code + " " + error.message);
     return encodedRedirect("error", "/sign-up", error.message);
-  } else {
-    // if succes sync the new user to our public.profiles
-    const userId = data.user?.id;
-    if (userId) {
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert({ id: userId });
-
-      if (insertError) {
-        console.error("Failed to create profile:", insertError.message);
-        return encodedRedirect(
-          "error",
-          "/sign-up",
-          "Failed to create profile.",
-        );
-      }
-    }
-    return encodedRedirect(
-      "success",
-      "/sign-up",
-      "Thanks for signing up! Please check your email for a verification link.",
-    );
   }
+  return encodedRedirect(
+    "success",
+    "/sign-up",
+    "Thanks for signing up! Please check your email for a verification link.",
+  );
 };
 
 export const signInAction = async (formData: FormData) => {
@@ -67,6 +50,25 @@ export const signInAction = async (formData: FormData) => {
 
   if (error) {
     return encodedRedirect("error", "/sign-in", error.message);
+  }
+
+  // now try to insert their profile if it does not already exist
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getSession();
+  if (sessionError || !sessionData.session?.user?.id) {
+    return encodedRedirect("error", "/sign-in", "Failed to fetch session.");
+  }
+
+  const userId = sessionData.session.user.id;
+  if (userId) {
+    const { error: insertError } = await supabase
+      .from("profiles")
+      .insert({ id: userId });
+
+    if (insertError && insertError.code !== '23505') {
+      console.error("Failed to create profile:", insertError.message);
+      return encodedRedirect("error", "/sign-up", "Failed to create profile.");
+    }
   }
 
   return redirect("/protected");
