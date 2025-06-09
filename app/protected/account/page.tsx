@@ -74,7 +74,7 @@ export default function Account() {
         .eq("id", user.id);
       if (error) throw new Error("Error uploading favorite games");
     } catch (err) {
-      alert(err);
+      if (err instanceof Error) alert(err.message);
       return;
     }
   };
@@ -82,14 +82,14 @@ export default function Account() {
   const handlePictureSubmit = async () => {
     try {
       if (!user) throw new Error("Error getting session");
-      if (!clickedAvatar) throw new Error("No avatar has been selected");
+      if (!clickedAvatar && clickedAvatar !== 0) throw new Error("No avatar has been selected");
       const { error } = await supabase
         .from("profiles")
         .update({ avatar_index: clickedAvatar + 1 })
         .eq("id", user.id);
       if (error) throw new Error("Error uploading avatar");
     } catch (err) {
-      alert(err);
+      if (err instanceof Error) alert(err.message);
       return;
     }
   };

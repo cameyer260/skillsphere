@@ -196,8 +196,6 @@ export const addFriendAction = async (
       .insert({
         requester: ourUser.user.id,
         receiver: theirData.id,
-        requester_username: ourData.username,
-        receiver_username: theirData.username,
       });
     if (!resError) return null;
     return new Error("Request has already been sent");
