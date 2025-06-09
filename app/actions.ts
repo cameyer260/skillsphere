@@ -66,9 +66,9 @@ export const signInAction = async (formData: FormData) => {
     // use service role to bypass rls policies and to use its (granted) access on auth.users which is needed in this context
     const { error: insertError } = await supabaseAdmin
       .from("profiles")
-      .insert({ id: userData.user.id});
+      .insert({ id: userData.user.id });
 
-    if (insertError && insertError.code !== '23505') {
+    if (insertError && insertError.code !== "23505") {
       console.error("Failed to create profile:", insertError.message);
       return encodedRedirect("error", "/sign-up", "Failed to create profile.");
     }
@@ -157,48 +157,53 @@ export const addFriendAction = async (
   username: string,
 ): Promise<Error | null> => {
   // error = failure, null = success
-  if (!username || username.length === 0)
-    return new Error("Username cannot be empty");
-  const supabase = await createClient();
-  const { data: ourUser, error: ourUserError } = await supabase.auth.getUser();
-  if (!ourUser || !ourUser.user) return new Error("Failed to add friend");
-  const { data: ourData, error: ourError } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .eq("id", ourUser.user.id)
-    .single();
-  const { data: theirData, error: theirError } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .eq("username", username)
-    .single();
-  if (ourError || theirError) return new Error("Failed to add friend");
-  // first check for an incoming friend request from this account they would like to add, if there is one, just accept it
-  const { data: incomingReqs, error: incomingRError } = await supabase
-    .from("friends")
-    .select("*")
-    .eq("receiver", ourUser.user.id)
-    .eq("requester", theirData.id)
-    .single();
-  if (incomingReqs && !incomingRError) {
-    const { data: res, error: resError } = await supabase
+  try {
+    if (!username || username.length === 0)
+      throw new Error("Username cannot be empty");
+    const supabase = await createClient();
+    const { data: ourUser, error: ourUserError } =
+      await supabase.auth.getUser();
+    if (!ourUser || !ourUser.user) return new Error("Failed to add friend");
+    const { data: ourData, error: ourError } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .eq("id", ourUser.user.id)
+      .single();
+    const { data: theirData, error: theirError } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .eq("username", username)
+      .single();
+    if (ourError || theirError) return new Error("Failed to add friend");
+    // first check for an incoming friend request from this account they would like to add, if there is one, just accept it
+    const { data: incomingReqs, error: incomingRError } = await supabase
       .from("friends")
-      .update({ status: "accepted" })
+      .select("*")
       .eq("receiver", ourUser.user.id)
-      .eq("requester", theirData.id);
-    if (!resError) return null;
-    return new Error("Failed to accept request incoming request");
+      .eq("requester", theirData.id)
+      .single();
+    if (incomingReqs && !incomingRError) {
+      const { data: res, error: resError } = await supabase
+        .from("friends")
+        .update({ status: "accepted" })
+        .eq("receiver", ourUser.user.id)
+        .eq("requester", theirData.id);
+      if (!resError) return null;
+      throw new Error("Failed to accept request incoming request");
+    }
+    // case that there was no incoming friend req, post one to db here
+    if (!incomingReqs && incomingRError?.code === "PGRST116") {
+      const { data: res, error: resError } = await supabase
+        .from("friends")
+        .insert({
+          requester: ourUser.user.id,
+          receiver: theirData.id,
+        });
+      if (!resError) return null;
+      throw new Error("Request has already been sent");
+    }
+    throw new Error("Failed to add friend");
+  } catch (err) {
+    return err instanceof Error ? err : new Error("Unexpected error");
   }
-  // case that there was no incoming friend req, post one to db here
-  if (!incomingReqs && incomingRError?.code === "PGRST116") {
-    const { data: res, error: resError } = await supabase
-      .from("friends")
-      .insert({
-        requester: ourUser.user.id,
-        receiver: theirData.id,
-      });
-    if (!resError) return null;
-    return new Error("Request has already been sent");
-  }
-  return new Error("Failed to add friend");
 };
