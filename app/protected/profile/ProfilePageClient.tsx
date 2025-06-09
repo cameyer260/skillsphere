@@ -150,7 +150,7 @@ export default function ProfilePageClient() {
               const addFriend = async () => {
                 const error = await addFriendAction(profile.username);
                 if (error) {
-                  alert(error.message);
+                  alert(error);
                 } else {
                   setTrigger(!trigger);
                 }
