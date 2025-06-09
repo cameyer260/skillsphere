@@ -4,6 +4,7 @@ import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { createServiceRoleClient } from "@/utils/supabase/service_role";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -42,6 +43,7 @@ export const signInAction = async (formData: FormData) => {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const supabase = await createClient();
+  const supabaseAdmin = await createServiceRoleClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -59,11 +61,12 @@ export const signInAction = async (formData: FormData) => {
     return encodedRedirect("error", "/sign-in", "Failed to fetch session.");
   }
 
-  const userId = sessionData.session.user.id;
-  if (userId) {
-    const { error: insertError } = await supabase
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userData && !userError) {
+    // use service role to bypass rls policies and to use its (granted) access on auth.users which is needed in this context
+    const { error: insertError } = await supabaseAdmin
       .from("profiles")
-      .insert({ id: userId });
+      .insert({ id: userData.user.id});
 
     if (insertError && insertError.code !== '23505') {
       console.error("Failed to create profile:", insertError.message);
