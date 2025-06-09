@@ -155,15 +155,15 @@ export const signOutAction = async () => {
 
 export const addFriendAction = async (
   username: string,
-): Promise<Error | null> => {
-  // error = failure, null = success
+): Promise<string | null> => {
+  // error string = failure, null = success
   try {
     if (!username || username.length === 0)
       throw new Error("Username cannot be empty");
     const supabase = await createClient();
     const { data: ourUser, error: ourUserError } =
       await supabase.auth.getUser();
-    if (!ourUser || !ourUser.user) return new Error("Failed to add friend");
+    if (!ourUser || !ourUser.user) throw new Error("Failed to add friend");
     const { data: ourData, error: ourError } = await supabase
       .from("profiles")
       .select("id, username")
@@ -174,7 +174,7 @@ export const addFriendAction = async (
       .select("id, username")
       .eq("username", username)
       .single();
-    if (ourError || theirError) return new Error("Failed to add friend");
+    if (ourError || theirError) throw new Error("Failed to add friend");
     // first check for an incoming friend request from this account they would like to add, if there is one, just accept it
     const { data: incomingReqs, error: incomingRError } = await supabase
       .from("friends")
@@ -204,6 +204,6 @@ export const addFriendAction = async (
     }
     throw new Error("Failed to add friend");
   } catch (err) {
-    return err instanceof Error ? err : new Error("Unexpected error");
+    return err instanceof Error ? err.message : "Unexpected error";
   }
 };

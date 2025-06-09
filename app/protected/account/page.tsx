@@ -345,7 +345,7 @@ export default function Account() {
                             newFriendResult[i],
                           );
                           if (error) {
-                            alert(error.message);
+                            alert(error);
                           } else {
                             setTrigger(!trigger);
                           }
