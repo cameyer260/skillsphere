@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export default function AuthButton() {
-  const { user, loading, isMobile } = useGlobal();
+  const { user, authUser, loading, isMobile } = useGlobal();
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function AuthButton() {
             />
           )}
           <>
-            {(!loading && !isMobile) ? (
+            {!loading && !isMobile ? (
               user ? (
                 user.username ? (
                   <>
@@ -59,7 +59,7 @@ export default function AuthButton() {
           About
         </Link>
       )}
-      {!loading && user && (
+      {!loading && authUser && (
         <form action={signOutAction}>
           <Button type="submit" variant={"outline"}>
             Sign out

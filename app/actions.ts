@@ -11,7 +11,6 @@ export const signUpAction = async (formData: FormData) => {
   const password = formData.get("password")?.toString();
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
-
   if (!email || !password) {
     return encodedRedirect(
       "error",
@@ -19,7 +18,6 @@ export const signUpAction = async (formData: FormData) => {
       "Email and password are required",
     );
   }
-
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -27,7 +25,6 @@ export const signUpAction = async (formData: FormData) => {
       emailRedirectTo: `${origin}/auth/callback`,
     },
   });
-
   if (error) {
     console.error(error.code + " " + error.message);
     return encodedRedirect("error", "/sign-up", error.message);
@@ -44,36 +41,31 @@ export const signInAction = async (formData: FormData) => {
   const password = formData.get("password") as string;
   const supabase = await createClient();
   const supabaseAdmin = await createServiceRoleClient();
-
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
-
   if (error) {
     return encodedRedirect("error", "/sign-in", error.message);
   }
-
   // now try to insert their profile if it does not already exist
   const { data: sessionData, error: sessionError } =
     await supabase.auth.getSession();
   if (sessionError || !sessionData.session?.user?.id) {
     return encodedRedirect("error", "/sign-in", "Failed to fetch session.");
   }
-
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userData && !userError) {
     // use service role to bypass rls policies and to use its (granted) access on auth.users which is needed in this context
     const { error: insertError } = await supabaseAdmin
       .from("profiles")
       .insert({ id: userData.user.id });
-
     if (insertError && insertError.code !== "23505") {
       console.error("Failed to create profile:", insertError.message);
-      return encodedRedirect("error", "/sign-up", "Failed to create profile.");
+      const { error: signOutError } = await supabase.auth.signOut();
+      return encodedRedirect("error", "/sign-in", "Failed to create profile.");
     }
   }
-
   return redirect("/protected");
 };
 
@@ -82,15 +74,12 @@ export const forgotPasswordAction = async (formData: FormData) => {
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
   const callbackUrl = formData.get("callbackUrl")?.toString();
-
   if (!email) {
     return encodedRedirect("error", "/forgot-password", "Email is required");
   }
-
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?redirect_to=/protected/reset-password`,
   });
-
   if (error) {
     console.error(error.message);
     return encodedRedirect(
@@ -99,11 +88,9 @@ export const forgotPasswordAction = async (formData: FormData) => {
       "Could not reset password",
     );
   }
-
   if (callbackUrl) {
     return redirect(callbackUrl);
   }
-
   return encodedRedirect(
     "success",
     "/forgot-password",
@@ -113,10 +100,8 @@ export const forgotPasswordAction = async (formData: FormData) => {
 
 export const resetPasswordAction = async (formData: FormData) => {
   const supabase = await createClient();
-
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
-
   if (!password || !confirmPassword) {
     encodedRedirect(
       "error",
@@ -124,7 +109,6 @@ export const resetPasswordAction = async (formData: FormData) => {
       "Password and confirm password are required",
     );
   }
-
   if (password !== confirmPassword) {
     encodedRedirect(
       "error",
@@ -132,7 +116,6 @@ export const resetPasswordAction = async (formData: FormData) => {
       "Passwords do not match",
     );
   }
-
   const { error } = await supabase.auth.updateUser({
     password: password,
   });
@@ -143,7 +126,6 @@ export const resetPasswordAction = async (formData: FormData) => {
       "Password update failed",
     );
   }
-
   encodedRedirect("success", "/protected/reset-password", "Password updated");
 };
 

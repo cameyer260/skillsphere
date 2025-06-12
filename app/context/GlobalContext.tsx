@@ -9,6 +9,7 @@ import {
   useContext,
 } from "react";
 import { usePathname } from "next/navigation";
+import type { User as AuthUser } from "@supabase/supabase-js";
 
 export type User = {
   id: string;
@@ -28,6 +29,7 @@ export type Friend = {
 
 type GlobalContextType = {
   user: User | null;
+  authUser: AuthUser | null;
   friends: Friend[] | null;
   isMobile: boolean;
   loading: boolean;
@@ -41,6 +43,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   const [user, setUser] = useState<User | null>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [friends, setFriends] = useState<Friend[] | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -80,6 +83,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return;
       }
+      setAuthUser(rawUser);
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select()
@@ -135,7 +139,7 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <GlobalContext.Provider
-      value={{ user, friends, loading, trigger, setTrigger, isMobile }}
+      value={{ user, authUser, friends, loading, trigger, setTrigger, isMobile }}
     >
       {children}
     </GlobalContext.Provider>
