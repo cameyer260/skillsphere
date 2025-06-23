@@ -243,7 +243,9 @@ function OnlinePageComponent() {
 }
 
 export default function OnlinePage() {
-  <Suspense fallback={<div>loading...</div>}>
-    <OnlinePageComponent />
-  </Suspense>;
+  return (
+    <Suspense fallback={<div>loading...</div>}>
+      <OnlinePageComponent />
+    </Suspense>
+  );
 }
