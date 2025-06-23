@@ -88,19 +88,25 @@ export default function OnlinePage() {
         ws.onclose = (event) => {
           setWsConnected(false);
           console.log("Disconnected from server", event.code, event.reason);
+
+          // Only show error if disconnect was unexpected
           if (event.code !== 1000) {
             setLocalErr("Disconnected from lobby unexpectedly.");
             router.push("/protected/play/tic-tac-toe/online");
           } else {
-            setLocalErr(null); // Clear previous errors on clean close
+            setLocalErr(null); // Clear any previous error
           }
         };
+
         ws.onerror = (err) => {
-          setWsConnected(false);
-          console.log("WebSocket error");
-          console.log(err);
-          setLocalErr("Error connecting to lobby");
-          router.push("/protected/play/tic-tac-toe/online");
+          console.log("WebSocket error", err);
+
+          // Only set error if lobbyCode is still active
+          if (lobbyCode) {
+            setWsConnected(false);
+            setLocalErr("Error connecting to lobby");
+            router.push("/protected/play/tic-tac-toe/online");
+          }
         };
         return () => ws.close();
         // finally, on success show them the lobby-component instead of the regular joining page
