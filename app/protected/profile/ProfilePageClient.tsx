@@ -15,6 +15,7 @@ type Profile = {
   favorite_games: string;
   avatar_index: number;
   rank: number;
+  wordRank: string;
   matches_played: number;
   joined_date: string;
   friends_count: number;
@@ -90,13 +91,31 @@ export default function ProfilePageClient() {
         month: "long",
         day: "numeric",
       });
-      const { data: fCount, error: fcError } = await supabase.rpc("get_friends_count", { user_id: data.id });
+      const { data: fCount, error: fcError } = await supabase.rpc(
+        "get_friends_count",
+        { user_id: data.id },
+      );
+      const ranks = [
+        "Bronze",
+        "Silver",
+        "Gold",
+        "Diamond",
+        "Peasant",
+        "Merchant",
+        "Knight",
+        "King",
+        "Emperor",
+        "Demon",
+        "Creator",
+      ]; // ranks go as follows. creator is unattainable for regular accounts, only for mine lol.
+      const index = Math.floor(data.rank / 10);
       setProfile({
         id: data.id,
         username: data.username,
         favorite_games: data.favorite_games,
         avatar_index: data.avatar_index,
         rank: data.rank,
+        wordRank: ranks[index],
         matches_played: data.matches_played,
         joined_date: formatted,
         friends_count: fCount && !fcError && fCount,
@@ -264,7 +283,14 @@ export default function ProfilePageClient() {
           </div>
         </div>
         <div className="flex flex-col gap-2 justify-center border-l border-l-foreground/30 p-4">
-          <p>Rank: {localLoading ? "..." : profile ? profile.rank : ""}</p>
+          <p>
+            Rank:{" "}
+            {localLoading
+              ? "..."
+              : profile
+                ? `${profile.wordRank} ${profile.rank}`
+                : ""}
+          </p>
           <p>
             Matches Played:{" "}
             {localLoading ? "..." : profile ? profile.matches_played : ""}

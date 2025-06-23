@@ -1,0 +1,4 @@
+pm2 list             # See status of all processes
+pm2 logs ws-server   # Watch logs
+pm2 restart ws-server
+pm2 stop ws-server
