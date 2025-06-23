@@ -21,7 +21,12 @@ export default function OnlinePage() {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    if (!lobbyCode) setLocalErr(null);
+    if (!lobbyCode) {
+      setLocalErr(null);
+    }
+  }, [lobbyCode]);
+
+  useEffect(() => {
     const handleLobbyJoin = async () => {
       if (!user || loading || !lobbyCode) return;
       // try to join the lobby if it exists, if not forward them to another page
@@ -80,9 +85,15 @@ export default function OnlinePage() {
         ws.onmessage = (event) => {
           console.log(event);
         };
-        ws.onclose = () => {
+        ws.onclose = (event) => {
           setWsConnected(false);
-          console.log("Disconnected from server");
+          console.log("Disconnected from server", event.code, event.reason);
+          if (event.code !== 1000) {
+            setLocalErr("Disconnected from lobby unexpectedly.");
+            router.push("/protected/play/tic-tac-toe/online");
+          } else {
+            setLocalErr(null); // Clear previous errors on clean close
+          }
         };
         ws.onerror = (err) => {
           setWsConnected(false);
