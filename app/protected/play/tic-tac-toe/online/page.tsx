@@ -70,7 +70,6 @@ export default function OnlinePage() {
             throw new Error("Failed to join lobby. You may try again.");
         }
         // now that they are successfully added to the lobby as the owner or a player, we can establish a web socket connection
-
         const ws = new WebSocket(
           process.env.NODE_ENV === "development"
             ? "ws://localhost:8080"
@@ -88,21 +87,21 @@ export default function OnlinePage() {
         ws.onclose = (event) => {
           setWsConnected(false);
           console.log("Disconnected from server", event.code, event.reason);
-
-          // Only show error if disconnect was unexpected
+          // Only show an error if the close was abnormal
           if (event.code !== 1000) {
             setLocalErr("Disconnected from lobby unexpectedly.");
             router.push("/protected/play/tic-tac-toe/online");
           } else {
-            setLocalErr(null); // Clear any previous error
+            setLocalErr(null); // Clear old errors on clean close
           }
         };
-
         ws.onerror = (err) => {
           console.log("WebSocket error", err);
-
-          // Only set error if lobbyCode is still active
-          if (lobbyCode) {
+          // Don’t show error if we're intentionally leaving the lobby
+          if (
+            socketRef.current?.readyState !== WebSocket.CLOSING &&
+            socketRef.current?.readyState !== WebSocket.CLOSED
+          ) {
             setWsConnected(false);
             setLocalErr("Error connecting to lobby");
             router.push("/protected/play/tic-tac-toe/online");
@@ -120,6 +119,11 @@ export default function OnlinePage() {
       }
     };
     handleLobbyJoin();
+    return () => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.close(1000, "Component unmounted");
+      }
+    };
   }, [searchParams, loading]);
 
   const handleJoinSubmit = async (e: React.FormEvent) => {
