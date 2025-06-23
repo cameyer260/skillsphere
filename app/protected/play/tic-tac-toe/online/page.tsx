@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useGlobal } from "@/app/context/GlobalContext";
@@ -173,71 +173,77 @@ export default function OnlinePage() {
     }
   };
 
-  return wsConnected ? (
-    <LobbyComponent
-      isOwner={isLobbyOwner}
-      supabase={supabase}
-      socket={socketRef}
-      setError={setLocalErr}
-      router={router}
-    />
-  ) : !lobbyCode ? (
-    <div className="flex flex-col w-full h-[calc(100vh-4rem)] items-center">
-      {localErr && <ErrorBanner message={localErr} />}
-      <h1 className="text-5xl mt-5 mb-5">Join a Game or Create a New One</h1>
-      <div className="flex flex-row w-full h-full justify-center text-center">
-        <div className="border-r border-foreground/30 h-[87.5%] flex-1">
-          <h1 className="text-3xl mb-3">Enter Your Code Here:</h1>
-          <form
-            onSubmit={handleJoinSubmit}
-            className="flex flex-col gap-4 items-center"
-          >
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="ex:5w7eJlK"
-              maxLength={7}
-              className="appearance-none border border-foreground/30 rounded-lg px-2 outline-none bg-transparent"
-            />
-            <input
-              type="submit"
-              value="Join Game"
-              className="border rounded-lg border-foreground/30 px-2 text-xl cursor-pointer"
-            />
-          </form>
-        </div>
-        <div className="h-[87.5%] flex-1">
-          <h1 className="text-3xl mb-3">Create Your Game Lobby:</h1>
-          <form
-            onSubmit={handleCreateSubmit}
-            className="flex flex-col gap-2 justify-center"
-          >
-            <div className="mb-2">
-              <label className="flex gap-2 justify-center">
-                Choose a party name:{" "}
+  return (
+    <Suspense fallback={<div>loading...</div>}>
+      {wsConnected ? (
+        <LobbyComponent
+          isOwner={isLobbyOwner}
+          supabase={supabase}
+          socket={socketRef}
+          setError={setLocalErr}
+          router={router}
+        />
+      ) : !lobbyCode ? (
+        <div className="flex flex-col w-full h-[calc(100vh-4rem)] items-center">
+          {localErr && <ErrorBanner message={localErr} />}
+          <h1 className="text-5xl mt-5 mb-5">
+            Join a Game or Create a New One
+          </h1>
+          <div className="flex flex-row w-full h-full justify-center text-center">
+            <div className="border-r border-foreground/30 h-[87.5%] flex-1">
+              <h1 className="text-3xl mb-3">Enter Your Code Here:</h1>
+              <form
+                onSubmit={handleJoinSubmit}
+                className="flex flex-col gap-4 items-center"
+              >
                 <input
                   type="text"
-                  value={partyName}
-                  onChange={(e) => setPartyName(e.target.value)}
-                  placeholder="ex: Tim's Tin Knights"
-                  maxLength={25}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="ex:5w7eJlK"
+                  maxLength={7}
                   className="appearance-none border border-foreground/30 rounded-lg px-2 outline-none bg-transparent"
                 />
-              </label>
+                <input
+                  type="submit"
+                  value="Join Game"
+                  className="border rounded-lg border-foreground/30 px-2 text-xl cursor-pointer"
+                />
+              </form>
             </div>
-            <div>
-              <input
-                type="submit"
-                value="Create Game"
-                className="border rounded-lg border-foreground/30 px-2 text-xl cursor-pointer"
-              />
+            <div className="h-[87.5%] flex-1">
+              <h1 className="text-3xl mb-3">Create Your Game Lobby:</h1>
+              <form
+                onSubmit={handleCreateSubmit}
+                className="flex flex-col gap-2 justify-center"
+              >
+                <div className="mb-2">
+                  <label className="flex gap-2 justify-center">
+                    Choose a party name:{" "}
+                    <input
+                      type="text"
+                      value={partyName}
+                      onChange={(e) => setPartyName(e.target.value)}
+                      placeholder="ex: Tim's Tin Knights"
+                      maxLength={25}
+                      className="appearance-none border border-foreground/30 rounded-lg px-2 outline-none bg-transparent"
+                    />
+                  </label>
+                </div>
+                <div>
+                  <input
+                    type="submit"
+                    value="Create Game"
+                    className="border rounded-lg border-foreground/30 px-2 text-xl cursor-pointer"
+                  />
+                </div>
+              </form>{" "}
             </div>
-          </form>{" "}
+          </div>
         </div>
-      </div>
-    </div>
-  ) : (
-    <div>loading...</div>
+      ) : (
+        <div>loading...</div>
+      )}
+    </Suspense>
   );
 }
