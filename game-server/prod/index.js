@@ -38,8 +38,9 @@ wss.on("connection", async (socket, req) => {
   try {
     const { data, error } = await supabase.auth.getUser(token);
     console.log(data, error);
+    if (!data || error) socket.close(1008, "Could not authenticate user");
   } catch (err) {
-    console.error("Unexpected error: ", err);
+    console.log("Unexpected error: ", err);
     socket.close(1011, "Internal error");
   }
 
@@ -54,4 +55,3 @@ wss.on("connection", async (socket, req) => {
 server.listen(443, () => {
   console.log("HTTPS + WSS server running on port 443");
 });
-

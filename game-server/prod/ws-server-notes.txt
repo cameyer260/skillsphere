@@ -5,3 +5,5 @@ pm2 stop ws-server
 
 
 vps ip: 204.48.31.62
+scp ~/code/independent-projects/web-development/skillsphere2/game-server/prod/index.js root@204.48.31.62:/root/src/index.js
+scp ~/code/independent-projects/web-development/skillsphere2/game-server/.env root@204.48.31.62:/root/.env

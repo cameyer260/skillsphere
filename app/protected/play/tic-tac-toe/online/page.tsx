@@ -69,14 +69,19 @@ function OnlinePageComponent() {
           if (error)
             throw new Error("Failed to join lobby. You may try again.");
         }
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
-        if (!accessToken) throw new Error("Failed to get user session. Try logging out and logging back in or refreshing the page.");
+        if (!accessToken)
+          throw new Error(
+            "Failed to get user session. Try logging out and logging back in or refreshing the page.",
+          );
         // now that they are successfully added to the lobby as the owner or a player, we can establish a web socket connection
         const ws = new WebSocket(
           process.env.NODE_ENV === "development"
-            ? `ws://localhost:8080?token=${accessToken}`
-            : `wss://ws.playskillsphere.com?token=${accessToken}`, // make sure your VPS supports SSL
+            ? `ws://localhost:8080?token=${accessToken}&game=tic-tac-toe`
+            : `wss://ws.playskillsphere.com?token=${accessToken}&game=tic-tac-toe`,
         );
         socketRef.current = ws;
         ws.onopen = () => {
