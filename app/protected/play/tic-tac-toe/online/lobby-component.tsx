@@ -19,39 +19,12 @@ export default function LobbyComponent({
   const { user } = useGlobal();
   const startGame = async () => {};
 
+  // TODO
+  // REWRITE TO EXIT WS GRACEFULLY WITH MESSAGE AND REASON
+  // HANDLE THAT ON THE VPS, NOTIFY OTHER PLAYERS AND PAUSE GAME OR WHATEVER
   const exitLobby = async () => {
-    if (!user) return;
-    if (isOwner) {
-      const { error } = await supabase
-        .from("lobbies")
-        .delete()
-        .eq("owner", user.id);
-      if (error) {
-        setError("Failed to disband lobby");
-        return;
-      }
-      // send data that lobby has been closed to web socket
-      // that data will then be used to close the web socket connection to the other users
-      if (socket.current?.readyState === WebSocket.OPEN) {
-        socket.current.close(1000, "Lobby has been disbanded");
-      }
-      router.push("/protected/play/tic-tac-toe/online");
-    } else {
-      const { error } = await supabase
-        .from("lobby_players")
-        .delete()
-        .eq("player_id", user.id);
-      if (error) {
-        setError("Failed to leave lobby");
-        return;
-      }
-      // send data that user has left
-      // that data will be used to inform the other players
-      if (socket.current?.readyState === WebSocket.OPEN) {
-        socket.current.close(1000, "Lobby has been disbanded");
-      }
-      router.push("/protected/play/tic-tac-toe/online");
-    }
+    socket.current?.close(1000, "User leaving lobby");
+    router.push("/protected");
   };
 
   return (

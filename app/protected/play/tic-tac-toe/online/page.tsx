@@ -27,48 +27,14 @@ function OnlinePageComponent() {
   }, [lobbyCode]);
 
   useEffect(() => {
-    const handleLobbyJoin = async () => {
+    const handleConnect = async () => {
       if (!user || loading || !lobbyCode) return;
-      // try to join the lobby if it exists, if not forward them to another page
+      // try to connect to vps via ws
       try {
         if (lobbyCode.length !== 7) {
           throw new Error("Invalid join code.");
         }
-        // ensure lobby exists in lobbies table
-        const { data, error } = await supabase
-          .from("lobbies")
-          .select("*")
-          .eq("code", lobbyCode)
-          .single();
-        if (!data || error) {
-          throw new Error(
-            "Error finding lobby. Please double check that your join code is correct.",
-          );
-        }
-        setIsLobbyOwner(data.owner === user.id ? true : false);
-        const { data: inLobby } = await supabase
-          .from("lobby_players")
-          .select("*")
-          .eq("player_id", user.id)
-          .eq("lobby_id", data.id)
-          .single();
-        // if they are owner or are already in the lobby, then we can skip the following
-        if (data.owner !== user.id && !inLobby) {
-          // add player to lobby players table
-          const { error } = await supabase
-            .from("lobby_players")
-            .insert({ lobby_id: data.id, player_id: user.id });
-          if (error && error.code === "42501") {
-            // case that they are already in a lobby, remove them from all lobbies (they own or dont) and then try again
-            await supabase.from("lobbies").delete().eq("owner", user.id);
-            await supabase
-              .from("lobby_players")
-              .delete()
-              .eq("player_id", user.id);
-          }
-          if (error)
-            throw new Error("Failed to join lobby. You may try again.");
-        }
+        // set is lobbby owner accordingly, handle connection failures
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -80,9 +46,10 @@ function OnlinePageComponent() {
         // now that they are successfully added to the lobby as the owner or a player, we can establish a web socket connection
         const ws = new WebSocket(
           process.env.NODE_ENV === "development"
-            ? `ws://localhost:8080?token=${accessToken}&game=tic-tac-toe`
-            : `wss://ws.playskillsphere.com?token=${accessToken}&game=tic-tac-toe`,
+            ? `ws://localhost:8080?token=${accessToken}&game=tic-tac-toe&lobby_code=${lobbyCode}`
+            : `wss://ws.playskillsphere.com?token=${accessToken}&game=tic-tac-toe&lobby_code=${lobbyCode}`,
         );
+
         socketRef.current = ws;
         ws.onopen = () => {
           setWsConnected(true);
@@ -122,7 +89,7 @@ function OnlinePageComponent() {
         }
       }
     };
-    handleLobbyJoin();
+    handleConnect();
     return () => {
       if (socketRef.current?.readyState === WebSocket.OPEN) {
         socketRef.current.close(1000, "Component unmounted");
@@ -204,7 +171,7 @@ function OnlinePageComponent() {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="ex:5w7eJlK"
+              placeholder="ex: 5w7eJlK"
               maxLength={7}
               className="appearance-none border border-foreground/30 rounded-lg px-2 outline-none bg-transparent"
             />
