@@ -56,6 +56,8 @@ function OnlinePageComponent() {
           console.log("Connected to websocket server");
           ws.send("Hello server!");
         };
+        // TODO
+        // LISTEN FOR PLAYERS AND IS LOBBY OWNER DATA. SETISLOBBYOWNER, AND CREATE A USESTATE TO HOLD THE PLAYER IDS AND USERNAMES (USE A MAP KEY VALUE PAIR). YOU WILL HAVE TO FETCH THOSE USERNAMES HERE.
         ws.onmessage = (event) => {
           console.log(event);
         };
@@ -67,6 +69,7 @@ function OnlinePageComponent() {
             router.push("/protected/play/tic-tac-toe/online");
           } else {
             setLocalErr(null);
+            router.push("/protected/play/tic-tac-toe/online");
           }
         };
         ws.onerror = (err) => {
@@ -139,6 +142,7 @@ function OnlinePageComponent() {
     } else {
       console.log(error);
       if (error.code === "42501") {
+        await supabase.from("lobbies").delete().eq("owner", user.id);
         setLocalErr(
           "You were already in an existing lobby. We've removed you from it, so you're now free to create a new one.",
         );

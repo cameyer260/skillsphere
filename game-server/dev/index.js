@@ -8,20 +8,22 @@ const server = new WebSocketServer({ port: 8080 });
 /**
  * starts the pong game loop, sends data back and forth between the two players.
  * @param socket the socket of the user
- * @param hi this is just an example param
  * @returns nothing
  */
-const pongLoop = async (socket, ready) => {
-  // 3. inside the tic tac toe function, start the game. send a ready message to the owner client specifically where they will not be allowed to hit start.
-};
+const pongLoop = async (socket, ready) => {};
 
 /**
  * starts the tic tac toe game loop, sends data back and forth between the two players.
  * @param socket the socket of the user
- * @param hi this is just an example param
+ * @parm userId the id of the user it is being called for
  * @returns nothing
  */
-const tttLoop = async (socket, ready) => {};
+const tttLoop = async (socket, userId) => {
+  // 3. inside the tic tac toe function, start the game. send a ready message to the owner client specifically where they will not be allowed to hit start.
+  console.log("tttloop called");
+  console.log(socket);
+  console.log(clients);
+};
 
 /**
  * starts the chess game loop, sends data back and forth between the two players.
@@ -30,6 +32,41 @@ const tttLoop = async (socket, ready) => {};
  * @returns nothing
  */
 const chessLoop = async (socket, ready) => {};
+
+/**
+ * fetches the players who are in your lobby from the global clients map.
+ * @param userId the id of the user
+ * @param clients the state of the clients map
+ * @returns an array of strings which are the ids of the players in the user's lobby, including their own id.
+ */
+const getPlayersInLobby = (userId, clients) => {
+  let lobbyId = clients.get(userId).lobbyId;
+  let playersInLobby = Array.from(clients.entries())
+    .filter(([id, clientData]) => clientData.lobbyId === lobbyId)
+    .map(([id, clientData]) => id);
+  return playersInLobby;
+};
+
+/**
+ * notifies the other players in the lobby of a change to lobbyPlayers
+ * @param userId the id of the user
+ * @param clients the state of the clients map
+ * @returns void
+ */
+const notifyPlayersChange = (userId, clients) => {
+  let playersInLobby = getPlayersInLobby(userId, clients);
+  for (const player of playersInLobby) {
+    const client = clients.get(player);
+    if (client && client.socket.readyState === WebSocket.OPEN) {
+      client.socket.send(
+        JSON.stringify({
+          type: "lobby_players",
+          payload: playersInLobby,
+        }),
+      );
+    }
+  }
+};
 
 // map to hold all active client key value pairs. key=userId, value=WebSocket
 const clients = new Map();
@@ -63,17 +100,11 @@ server.on("connection", async (socket, req) => {
     socket.close(1008, "No lobby code provided");
     return;
   }
-  console.log("Client connected");
-  console.log(token);
-  console.log(game);
-  console.log(lobbyCode);
 
   try {
     // authenticate user
     const { data: userData, error: userError } =
       await supabase.auth.getUser(token);
-    console.log(userData);
-    console.log(userError);
     if (userError || !userData) {
       socket.close(1008, "Could not authenticate user");
     }
@@ -105,50 +136,39 @@ server.on("connection", async (socket, req) => {
       .eq("player_id", userId)
       .eq("lobby_id", lobbyId)
       .single();
-    console.log("player_id: ", userId);
-    console.log("lobby_id: ", lobbyId);
-    console.log("in lobby: ", inLobby);
     // if they are owner or are already in the lobby, then we can skip the following
     if (lobbyOwnerId !== userId && !inLobby) {
       // add player to lobby players table
       const { error: lobbyJoinError } = await supabase
         .from("lobby_players")
         .insert({ lobby_id: lobbyId, player_id: userId });
-      console.log("lobbyJoinError: ", lobbyJoinError);
       if (lobbyJoinError && lobbyJoinError.code === "42501") {
         // case that they are already in a lobby, remove them from all lobbies (they own or dont) and then try again
         await supabase.from("lobbies").delete().eq("owner", userId);
-        await supabase
-          .from("lobby_players")
-          .delete()
-          .eq("player_id", userId);
+        await supabase.from("lobby_players").delete().eq("player_id", userId);
       }
       if (lobbyJoinError)
         socket.close(1008, "Failed to join lobby. You may try again.");
     }
 
-    // at this point we have reached a successful connection established, so we now add the user to our clients map 
+    // at this point we have reached a successful connection established, so we now add the user to our clients map
     clients.set(userId, { socket: socket, lobbyId: lobbyId, isOwner: isOwner });
 
-    // notify other players in lobby of join, first get all userIds who are in my lobby 
-    const playersInLobby = Array.from(clients.entries()).filter(([id, clientData]) => clientData.lobbyId === lobbyId).map(([id, clientData]) => id);
-    const { data: players } = await supabase.from("profiles").select("*").in("id", playersInLobby);
-    console.log(players);
-    // TODO 
-    // FIX CLIENT SIDE LOBBY CREATION, RE CREATE A TEST LOBBY ON ALT ACCOUNT. CURRENT ONE DOES NOT HAVE ALT ACCOUNT IN CLIENTS MAP BECAUSE IT WAS BEFORE THE ADDITION OF IT TO THE CODE 
+    // notify other players in lobby of join, first get all userIds who are in my lobby
+    notifyPlayersChange(userId, clients);
 
     let ready = false;
 
     // run game loop for whatever game they are playing
     switch (game) {
       case "pong":
-        pongLoop(socket, ready);
+        pongLoop(socket, userId);
         break;
       case "tic-tac-toe":
-        tttLoop(socket, ready);
+        tttLoop(socket, userId);
         break;
       case "chess":
-        chessLoop(socket, ready);
+        chessLoop(socket, userId);
         break;
       default:
         socket.close(1008, "Game not found");
@@ -164,19 +184,43 @@ server.on("connection", async (socket, req) => {
   });
 
   socket.on("close", async () => {
-    // TODO
-    // if they are the owner disconnect all other players
-    if (userId === lobbyOwnerId) {
-      const { error: deleteError } = await supabase.from("lobbies").delete().eq("id", lobbyId);
-      console.log("deleteError: ", deleteError);
-    } else {
-      // else just remove them from lobbies_players
-      const { error: leaveError } = await supabase.from("lobby_players").delete().eq("lobby_id", lobbyId).eq("player_id", userId);
-      console.log("leaveError: ", leaveError);
-    }
-    // now remove from clients 
+    let playersInLobby = getPlayersInLobby(userId, clients);
     clients.delete(userId);
-    console.log("Client disconnected");
+    playersInLobby = playersInLobby.filter((_) => _ !== userId);
+
+    if (userId === lobbyOwnerId) {
+      await supabase.from("lobbies").delete().eq("id", lobbyId);
+      for (const player of playersInLobby) {
+        const client = clients.get(player);
+        if (client && client.socket.readyState === WebSocket.OPEN) {
+          client.socket.send(
+            JSON.stringify({
+              type: "lobby_closed",
+              payload: "The lobby owner has disconnected",
+            }),
+          );
+          client.socket.close(1000, "Lobby closed");
+        }
+      }
+    } else {
+      await supabase
+        .from("lobby_players")
+        .delete()
+        .eq("lobby_id", lobbyId)
+        .eq("player_id", userId);
+      // notify other players in lobby of change to lobby_players
+      for (const player of playersInLobby) {
+        const client = clients.get(player);
+        if (client && client.socket.readyState === WebSocket.OPEN) {
+          client.socket.send(
+            JSON.stringify({
+              type: "lobby_players",
+              payload: playersInLobby,
+            }),
+          );
+        }
+      }
+    }
   });
 });
 
