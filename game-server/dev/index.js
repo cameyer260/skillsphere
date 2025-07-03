@@ -19,8 +19,33 @@ const pongLoop = async (socket, ready) => {};
  * @returns nothing
  */
 const tttLoop = async (socket, userId) => {
-  // 3. inside the tic tac toe function, start the game. send a ready message to the owner client specifically where they will not be allowed to hit start.
-  console.log("tttloop called");
+  socket.on("message", (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      const players = getPlayersInLobby(userId, clients);
+      switch (data.type) {
+        // if they sent a ready message indicating that they would like to start the game (frontend start game button was pressed by owner), we check that there are exactly two players in the lobby (tic tac toe party size requirement), that both players are connected via ws, and that the person who sent this ready message was the owner of the part (regular players are not authorized to start the game)
+        case "ready":
+          if (
+            players.length === 2 &&
+            clients.get(players[0].id).socket.readyState === WebSocket.OPEN &&
+            clients.get(players[1].id).socket.readyState === WebSocket.OPEN &&
+            clients.get(userId).isOwner
+          ) {
+            console.log("this game is allowed to be started");
+            // send a startgame message to both players including which player has the first turn, keep track of game state here locally which will be the offical state of the game
+            for (const player of players) {
+              const s = clients.get(player.id).socket;
+              if ((s.readyState === WebSocket.OPEN))
+                s.send(JSON.stringify({ type: "start_game" }));
+            }
+          }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    // listen for a ready message, verify it, then run the switch case above down here instead to start the game loop if the game is truly ready and the owner started it
+  });
 };
 
 /**
@@ -37,7 +62,7 @@ const chessLoop = async (socket, ready) => {};
  * @param clients the state of the clients map
  * @returns an array of strings which are the ids of the players in the user's lobby, including their own id.
  */
-const getPlayersInLobby = (userId, clients) => {
+const getPlayersInLobby = (userId) => {
   let lobbyId = clients.get(userId).lobbyId;
   let playersInLobby = Array.from(clients.entries())
     .filter(([id, clientData]) => clientData.lobbyId === lobbyId)
@@ -51,13 +76,10 @@ const getPlayersInLobby = (userId, clients) => {
  * @param clients the state of the clients map
  * @returns void
  */
-const notifyPlayersChange = (userId, clients) => {
-  console.log("notifyPlayers called");
-  let playersInLobby = getPlayersInLobby(userId, clients);
-  console.log(playersInLobby);
+const notifyPlayersChange = (userId) => {
+  let playersInLobby = getPlayersInLobby(userId);
   for (const player of playersInLobby) {
     const client = clients.get(player.id);
-    console.log(client);
     if (client && client.socket.readyState === WebSocket.OPEN) {
       client.socket.send(
         JSON.stringify({
@@ -166,7 +188,7 @@ server.on("connection", async (socket, req) => {
     clients.set(userId, { socket: socket, lobbyId: lobbyId, isOwner: isOwner });
 
     // notify other players in lobby of join, first get all userIds who are in my lobby
-    notifyPlayersChange(userId, clients);
+    notifyPlayersChange(userId);
 
     // now send them the lobby name real quick
     if (socket.readyState === WebSocket.OPEN)
@@ -194,14 +216,8 @@ server.on("connection", async (socket, req) => {
     socket.close(1011, "Internal error");
   }
 
-  socket.on("message", (message) => {
-    console.log("Received:", message.toString());
-    // listen for a ready message, verify it, then run the switch case above down here instead to start the game loop if the game is truly ready and the owner started it
-    socket.send(`Roger that! ${message}`);
-  });
-
   socket.on("close", async () => {
-    let playersInLobby = getPlayersInLobby(userId, clients);
+    let playersInLobby = getPlayersInLobby(userId);
     clients.delete(userId);
     playersInLobby = playersInLobby.filter((_) => _.id !== userId);
 

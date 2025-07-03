@@ -34,8 +34,11 @@ export default function LobbyComponent({
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
 
   const startGame = async () => {
-    console.log(lobbyName);
-    console.log(players);
+    socket.current?.send(
+      JSON.stringify({
+        type: "ready",
+      }),
+    );
   };
 
   // TODO

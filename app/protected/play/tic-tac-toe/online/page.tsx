@@ -58,55 +58,60 @@ function OnlinePageComponent() {
         socketRef.current = ws;
         ws.onopen = () => {
           setWsConnected(true);
-          console.log("Connected to websocket server");
-          ws.send("Hello server!");
           setLocalErr(null);
         };
-        // TODO
-        // LISTEN FOR PLAYERS AND IS LOBBY OWNER DATA. SETISLOBBYOWNER, AND CREATE A USESTATE TO HOLD THE PLAYER IDS AND USERNAMES (USE A MAP KEY VALUE PAIR). YOU WILL HAVE TO FETCH THOSE USERNAMES HERE.
         ws.onmessage = async (event) => {
           let message = JSON.parse(event.data);
-          if (message.type === "find_owner")
-            setIsLobbyOwner(message.lobbyOwner);
 
-          if (message.type === "lobby_players") {
-            // set lobby players accordingly
-            const players: {
-              username: string;
-              id: string;
-              owner: boolean;
-              avatarIndex: number;
-            }[] = [];
-            for (const player of message.payload) {
-              if (player.id !== user.id) {
-                const { data } = await supabase
-                  .from("profiles")
-                  .select("*")
-                  .eq("id", player.id)
-                  .single();
-                if (
-                  data &&
-                  typeof data.username === "string" &&
-                  typeof data.id === "string" &&
-                  typeof player.isOwner === "boolean" &&
-                  typeof data.avatar_index === "number"
-                ) {
-                  players.push({
-                    username: data.username,
-                    id: data.id,
-                    owner: player.isOwner,
-                    avatarIndex: data.avatar_index,
-                  });
+          switch (message.type) {
+            case "find_owner":
+              setIsLobbyOwner(message.lobbyOwner);
+              break;
+            case "lobby_players":
+              // set lobby players accordingly
+              const players: {
+                username: string;
+                id: string;
+                owner: boolean;
+                avatarIndex: number;
+              }[] = [];
+              for (const player of message.payload) {
+                if (player.id !== user.id) {
+                  const { data } = await supabase
+                    .from("profiles")
+                    .select("*")
+                    .eq("id", player.id)
+                    .single();
+                  if (
+                    data &&
+                    typeof data.username === "string" &&
+                    typeof data.id === "string" &&
+                    typeof player.isOwner === "boolean" &&
+                    typeof data.avatar_index === "number"
+                  ) {
+                    players.push({
+                      username: data.username,
+                      id: data.id,
+                      owner: player.isOwner,
+                      avatarIndex: data.avatar_index,
+                    });
+                  }
                 }
               }
-            }
-            setLobbyPlayers(players);
-          }
-
-          if (message.type === "lobby_name") {
-            setLobbyName(message.payload);
+              setLobbyPlayers(players);
+              break;
+            case "lobby_name":
+              setLobbyName(message.payload);
+              break;
+            case "start_game":
+              console.log("the server has orded me (the client) to start the game!");
+              break;
+            default:
+              console.log("Unexcepted message from web socket: ");
+              console.log(message);
           }
         };
+
         ws.onclose = (event) => {
           console.log("Disconnected", event.code, event.reason);
           setWsConnected(false);
