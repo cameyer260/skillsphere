@@ -21,8 +21,6 @@ const pongLoop = async (socket, ready) => {};
 const tttLoop = async (socket, userId) => {
   // 3. inside the tic tac toe function, start the game. send a ready message to the owner client specifically where they will not be allowed to hit start.
   console.log("tttloop called");
-  console.log(socket);
-  console.log(clients);
 };
 
 /**
@@ -43,7 +41,7 @@ const getPlayersInLobby = (userId, clients) => {
   let lobbyId = clients.get(userId).lobbyId;
   let playersInLobby = Array.from(clients.entries())
     .filter(([id, clientData]) => clientData.lobbyId === lobbyId)
-    .map(([id, clientData]) => id);
+    .map(([id, clientData]) => ({ id: id, isOwner: clientData.isOwner }));
   return playersInLobby;
 };
 
@@ -54,9 +52,12 @@ const getPlayersInLobby = (userId, clients) => {
  * @returns void
  */
 const notifyPlayersChange = (userId, clients) => {
+  console.log("notifyPlayers called");
   let playersInLobby = getPlayersInLobby(userId, clients);
+  console.log(playersInLobby);
   for (const player of playersInLobby) {
-    const client = clients.get(player);
+    const client = clients.get(player.id);
+    console.log(client);
     if (client && client.socket.readyState === WebSocket.OPEN) {
       client.socket.send(
         JSON.stringify({
@@ -109,6 +110,13 @@ server.on("connection", async (socket, req) => {
       socket.close(1008, "Could not authenticate user");
     }
     userId = userData.user.id;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (!profile || !profile.username)
+      socket.close(1008, "User must have a username uploaded to play online");
 
     // try to join the user to the lobby
     if (lobbyCode.length !== 7) {
@@ -125,6 +133,7 @@ server.on("connection", async (socket, req) => {
         1008,
         "Error finding lobby. Please double check that your join code is correct.",
       );
+      return;
     }
     lobbyId = lobbyData.id;
     lobbyOwnerId = lobbyData.owner;
@@ -147,8 +156,10 @@ server.on("connection", async (socket, req) => {
         await supabase.from("lobbies").delete().eq("owner", userId);
         await supabase.from("lobby_players").delete().eq("player_id", userId);
       }
-      if (lobbyJoinError)
+      if (lobbyJoinError) {
         socket.close(1008, "Failed to join lobby. You may try again.");
+        return;
+      }
     }
 
     // at this point we have reached a successful connection established, so we now add the user to our clients map
@@ -157,7 +168,11 @@ server.on("connection", async (socket, req) => {
     // notify other players in lobby of join, first get all userIds who are in my lobby
     notifyPlayersChange(userId, clients);
 
-    let ready = false;
+    // now send them the lobby name real quick
+    if (socket.readyState === WebSocket.OPEN)
+      socket.send(
+        JSON.stringify({ type: "lobby_name", payload: lobbyData.lobby_name }),
+      );
 
     // run game loop for whatever game they are playing
     switch (game) {
@@ -172,6 +187,7 @@ server.on("connection", async (socket, req) => {
         break;
       default:
         socket.close(1008, "Game not found");
+        return;
     }
   } catch (err) {
     console.log("Unexpected error: ", err);
@@ -180,18 +196,19 @@ server.on("connection", async (socket, req) => {
 
   socket.on("message", (message) => {
     console.log("Received:", message.toString());
+    // listen for a ready message, verify it, then run the switch case above down here instead to start the game loop if the game is truly ready and the owner started it
     socket.send(`Roger that! ${message}`);
   });
 
   socket.on("close", async () => {
     let playersInLobby = getPlayersInLobby(userId, clients);
     clients.delete(userId);
-    playersInLobby = playersInLobby.filter((_) => _ !== userId);
+    playersInLobby = playersInLobby.filter((_) => _.id !== userId);
 
     if (userId === lobbyOwnerId) {
       await supabase.from("lobbies").delete().eq("id", lobbyId);
       for (const player of playersInLobby) {
-        const client = clients.get(player);
+        const client = clients.get(player.id);
         if (client && client.socket.readyState === WebSocket.OPEN) {
           client.socket.send(
             JSON.stringify({
@@ -210,7 +227,7 @@ server.on("connection", async (socket, req) => {
         .eq("player_id", userId);
       // notify other players in lobby of change to lobby_players
       for (const player of playersInLobby) {
-        const client = clients.get(player);
+        const client = clients.get(player.id);
         if (client && client.socket.readyState === WebSocket.OPEN) {
           client.socket.send(
             JSON.stringify({

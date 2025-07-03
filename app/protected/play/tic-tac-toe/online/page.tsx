@@ -14,6 +14,11 @@ function OnlinePageComponent() {
   const supabase = createClient();
   const [code, setCode] = useState<string>("");
   const [partyName, setPartyName] = useState<string>("");
+  const [lobbyPlayers, setLobbyPlayers] = useState<
+    | { username: string; id: string; owner: boolean; avatarIndex: number }[]
+    | null
+  >(null);
+  const [lobbyName, setLobbyName] = useState<string | null>(null);
   const [localErr, setLocalErr] = useState<string | null>(null);
   const { user, loading } = useGlobal();
   const [wsConnected, setWsConnected] = useState<boolean>(false);
@@ -55,21 +60,69 @@ function OnlinePageComponent() {
           setWsConnected(true);
           console.log("Connected to websocket server");
           ws.send("Hello server!");
+          setLocalErr(null);
         };
         // TODO
         // LISTEN FOR PLAYERS AND IS LOBBY OWNER DATA. SETISLOBBYOWNER, AND CREATE A USESTATE TO HOLD THE PLAYER IDS AND USERNAMES (USE A MAP KEY VALUE PAIR). YOU WILL HAVE TO FETCH THOSE USERNAMES HERE.
-        ws.onmessage = (event) => {
-          console.log(event);
+        ws.onmessage = async (event) => {
+          let message = JSON.parse(event.data);
+          if (message.type === "find_owner")
+            setIsLobbyOwner(message.lobbyOwner);
+
+          if (message.type === "lobby_players") {
+            // set lobby players accordingly
+            const players: {
+              username: string;
+              id: string;
+              owner: boolean;
+              avatarIndex: number;
+            }[] = [];
+            for (const player of message.payload) {
+              if (player.id !== user.id) {
+                const { data } = await supabase
+                  .from("profiles")
+                  .select("*")
+                  .eq("id", player.id)
+                  .single();
+                if (
+                  data &&
+                  typeof data.username === "string" &&
+                  typeof data.id === "string" &&
+                  typeof player.isOwner === "boolean" &&
+                  typeof data.avatar_index === "number"
+                ) {
+                  players.push({
+                    username: data.username,
+                    id: data.id,
+                    owner: player.isOwner,
+                    avatarIndex: data.avatar_index,
+                  });
+                }
+              }
+            }
+            setLobbyPlayers(players);
+          }
+
+          if (message.type === "lobby_name") {
+            setLobbyName(message.payload);
+          }
         };
         ws.onclose = (event) => {
           console.log("Disconnected", event.code, event.reason);
           setWsConnected(false);
-          if (event.code !== 1000) {
-            setLocalErr("Disconnected from lobby unexpectedly");
-            router.push("/protected/play/tic-tac-toe/online");
-          } else {
-            setLocalErr(null);
-            router.push("/protected/play/tic-tac-toe/online");
+          setIsLobbyOwner(false);
+          socketRef.current = null;
+          switch (event.code) {
+            case 1008:
+              setLocalErr(
+                "No lobby was found with that code. Please double-check and try again.",
+              );
+              break;
+            case 1000:
+              setLocalErr(null);
+              break;
+            default:
+              setLocalErr("Disconnected from lobby unexpectedly");
           }
         };
         ws.onerror = (err) => {
@@ -152,15 +205,17 @@ function OnlinePageComponent() {
     }
   };
 
-  return wsConnected ? (
+  return wsConnected && lobbyCode ? (
     <LobbyComponent
       isOwner={isLobbyOwner}
       supabase={supabase}
       socket={socketRef}
       setError={setLocalErr}
       router={router}
+      lobbyName={lobbyName}
+      players={lobbyPlayers}
     />
-  ) : !lobbyCode ? (
+  ) : (
     <div className="flex flex-col w-full h-[calc(100vh-4rem)] items-center">
       {localErr && <ErrorBanner message={localErr} />}
       <h1 className="text-5xl mt-5 mb-5">Join a Game or Create a New One</h1>
@@ -216,8 +271,6 @@ function OnlinePageComponent() {
         </div>
       </div>
     </div>
-  ) : (
-    <div>loading...</div>
   );
 }
 
