@@ -8,7 +8,7 @@ export default function GameBoard({
 }: {
   board: (string | null)[][];
   isLightMode: boolean;
-  handleClick: () => string | null;
+  handleClick: (r: number, c: number) => string | null;
 }) {
   return (
     <div className="text-center">
