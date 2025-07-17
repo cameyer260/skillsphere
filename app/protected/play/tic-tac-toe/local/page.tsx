@@ -41,14 +41,16 @@ export default function LocalPage() {
           </div>
         </div>
       )}
-      <Board
-        handleWin={(val) => {
-          setWinOverlay(val);
-          document.body.style.overflow = "hidden"; // disable scrolling
-        }}
-        resetB={reset}
-        isLightMode={lightMode}
-      />
+      <div className="max-w-sm mx-auto">
+        <Board
+          handleWin={(val) => {
+            setWinOverlay(val);
+            document.body.style.overflow = "hidden"; // disable scrolling
+          }}
+          resetB={reset}
+          isLightMode={lightMode}
+        />
+      </div>
     </div>
   );
 }

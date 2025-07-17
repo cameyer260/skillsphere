@@ -19,32 +19,92 @@ const pongLoop = async (socket, ready) => {};
  * @returns nothing
  */
 const tttLoop = async (socket, userId) => {
+  // declare game state here
+  const gameState = {
+    turn: null,
+    x: null,
+    o: null,
+    board: null,
+  };
   socket.on("message", (message) => {
     try {
       const data = JSON.parse(message.toString());
       const players = getPlayersInLobby(userId, clients);
+
       switch (data.type) {
-        // if they sent a ready message indicating that they would like to start the game (frontend start game button was pressed by owner), we check that there are exactly two players in the lobby (tic tac toe party size requirement), that both players are connected via ws, and that the person who sent this ready message was the owner of the part (regular players are not authorized to start the game)
-        case "ready":
+        // case that the owner hit the start game button
+        case "ready": {
+          if (players.length !== 2) {
+            socket.send(
+              JSON.stringify({
+                type: "fail_start",
+                payload:
+                  "Error starting game. There must be only two players in the lobby for tic-tac-toe",
+              }),
+            );
+            break;
+          }
           if (
-            players.length === 2 &&
-            clients.get(players[0].id).socket.readyState === WebSocket.OPEN &&
-            clients.get(players[1].id).socket.readyState === WebSocket.OPEN &&
-            clients.get(userId).isOwner
+            clients.get(players[0].id).socket.readyState !== WebSocket.OPEN &&
+            clients.get(players[1].id).socket.readyState !== WebSocket.OPEN
           ) {
-            console.log("this game is allowed to be started");
-            // send a startgame message to both players including which player has the first turn, keep track of game state here locally which will be the offical state of the game
-            for (const player of players) {
-              const s = clients.get(player.id).socket;
-              if ((s.readyState === WebSocket.OPEN))
-                s.send(JSON.stringify({ type: "start_game" }));
+            socket.send(
+              JSON.stringify({
+                type: "fail_start",
+                payload:
+                  "Error starting game. One of the players is not connected to the lobby.",
+              }),
+            );
+            break;
+          }
+          if (clients.get(userId).isOwner !== true) {
+            socket.send(
+              JSON.stringify({
+                type: "fail_start",
+                payload:
+                  "Error starting game. You must be the owner to start it.",
+              }),
+            );
+            break;
+          }
+
+          console.log("this game is allowed to be started");
+          // send a startgame message to both players including which player has the first turn, keep track of game state here locally which will be the offical state of the game
+          const ownerFirst = Math.round(Math.random()) === 1; // randomly decide whether our owner goes first or not here
+          // initialize game state
+          gameState.turn = "x";
+          let owner = players[0].isOwner ? players[0].id : players[1].id;
+          let otherPlayer =
+            players[0].isOwner === false ? players[0].id : players[1].id;
+          gameState.x = ownerFirst ? owner : otherPlayer;
+          gameState.o = ownerFirst ? otherPlayer : owner;
+          gameState.board = [
+            [".", ".", "."],
+            [".", ".", "."],
+            [".", ".", "."],
+          ];
+          for (const player of players) {
+            const s = clients.get(player.id).socket;
+            if (s.readyState === WebSocket.OPEN) {
+              s.send(
+                JSON.stringify({
+                  type: "start_game",
+                  payload: {
+                    gameState: gameState,
+                  },
+                }),
+              );
             }
           }
+          break;
+        }
+        default: {
+          console.log("default hit");
+        }
       }
     } catch (err) {
       console.log(err);
     }
-    // listen for a ready message, verify it, then run the switch case above down here instead to start the game loop if the game is truly ready and the owner started it
   });
 };
 
@@ -190,11 +250,15 @@ server.on("connection", async (socket, req) => {
     // notify other players in lobby of join, first get all userIds who are in my lobby
     notifyPlayersChange(userId);
 
-    // now send them the lobby name real quick
-    if (socket.readyState === WebSocket.OPEN)
+    // now send them the lobby name and code
+    if (socket.readyState === WebSocket.OPEN) {
       socket.send(
         JSON.stringify({ type: "lobby_name", payload: lobbyData.lobby_name }),
       );
+      socket.send(
+        JSON.stringify({ type: "lobby_code", payload: lobbyData.code }),
+      );
+    }
 
     // run game loop for whatever game they are playing
     switch (game) {

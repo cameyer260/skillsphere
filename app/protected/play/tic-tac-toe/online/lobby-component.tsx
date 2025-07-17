@@ -1,22 +1,22 @@
-import { SupabaseClient } from "@supabase/supabase-js";
 import { Dispatch, SetStateAction } from "react";
 import { useGlobal } from "@/app/context/GlobalContext";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import CodeMessage from "@/components/code-message";
+import CopyButton from "@/components/ui/copy-button";
 
 export default function LobbyComponent({
   isOwner,
-  supabase,
   socket,
   setError,
   router,
   lobbyName,
   players,
+  code,
 }: {
   isOwner: boolean | null;
-  supabase: SupabaseClient;
   socket: React.MutableRefObject<WebSocket | null>;
   setError: Dispatch<SetStateAction<string | null>>;
   router: AppRouterInstance;
@@ -24,6 +24,7 @@ export default function LobbyComponent({
   players:
     | { username: string; id: string; owner: boolean; avatarIndex: number }[]
     | null;
+  code: string | null;
 }) {
   const { user } = useGlobal();
   const [mounted, setMounted] = useState(false);
@@ -56,11 +57,18 @@ export default function LobbyComponent({
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+      <CodeMessage
+        message={
+          "To invite a friend to this lobby, share the code in the top left or click it to copy a link and share it with them!"
+        }
+      />
       <div className="flex justify-center mt-6 text-2xl">
-        <h1 className="text-center border border-foreground/30 rounded-lg px-2">
-          {lobbyName}
-        </h1>
-        <div className="absolute right-6">
+        <div className="absolute left-6 flex gap-4">
+          <h1>Lobby Code: {code}</h1>
+          <CopyButton lightMode={lightMode} code={code}/>
+        </div>
+        <h1 className="text-center text-4xl">{lobbyName}</h1>
+        <div className="absolute right-6 flex gap-4">
           {isOwner && (
             <button
               onClick={startGame}

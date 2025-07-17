@@ -40,7 +40,7 @@ export default function AuthButton() {
               user ? (
                 user.username ? (
                   <>
-                    Hey,{" "}
+                    Hey, 
                     <b>
                       <u>{DOMPurify.sanitize(user.username)}!</u>
                     </b>

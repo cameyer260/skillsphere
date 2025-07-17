@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { useGlobal } from "@/app/context/GlobalContext";
 import ErrorBanner from "@/components/error-message";
 import LobbyComponent from "./lobby-component";
+import GameComponent from "./game-component";
 
 function OnlinePageComponent() {
   const searchParams = useSearchParams();
@@ -24,6 +25,8 @@ function OnlinePageComponent() {
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [isLobbyOwner, setIsLobbyOwner] = useState<boolean | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
+  const [cd, setCd] = useState<string | null>(null); // variables that will hold the code gotten from out ws connection and passed down to lobby component
+  const [gameInProgress, setGameInProgress] = useState<boolean>(false);
 
   useEffect(() => {
     if (!lobbyCode) {
@@ -103,8 +106,19 @@ function OnlinePageComponent() {
             case "lobby_name":
               setLobbyName(message.payload);
               break;
+            case "lobby_code":
+              setCd(message.payload);
+              break;
             case "start_game":
-              console.log("the server has orded me (the client) to start the game!");
+              console.log(
+                "the server has orded me (the client) to start the game!",
+              );
+              console.log(message.payload);
+              setGameInProgress(true);
+              break;
+            case "fail_start":
+              console.log("failed to start game");
+              console.log(message.payload);
               break;
             default:
               console.log("Unexcepted message from web socket: ");
@@ -210,15 +224,17 @@ function OnlinePageComponent() {
     }
   };
 
+  if (gameInProgress) return <GameComponent />;
+
   return wsConnected && lobbyCode ? (
     <LobbyComponent
       isOwner={isLobbyOwner}
-      supabase={supabase}
       socket={socketRef}
       setError={setLocalErr}
       router={router}
       lobbyName={lobbyName}
       players={lobbyPlayers}
+      code={cd}
     />
   ) : (
     <div className="flex flex-col w-full h-[calc(100vh-4rem)] items-center">
