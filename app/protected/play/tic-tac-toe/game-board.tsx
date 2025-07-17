@@ -4,9 +4,11 @@ import { Fragment } from "react";
 export default function GameBoard({
   board,
   isLightMode,
+  handleClick,
 }: {
-  board: string[][];
+  board: (string | null)[][];
   isLightMode: boolean;
+  handleClick: () => string | null;
 }) {
   return (
     <div className="text-center">
@@ -15,7 +17,7 @@ export default function GameBoard({
         {board.map((row, rIndex) => (
           <Fragment key={rIndex}>
             {row.map((char, cIndex) => (
-              <Tile char={char} isLightMode={isLightMode} key={cIndex} />
+              <Tile char={char} isLightMode={isLightMode} key={cIndex} r={rIndex} c={cIndex} handleClick={handleClick}/>
             ))}
           </Fragment>
         ))}

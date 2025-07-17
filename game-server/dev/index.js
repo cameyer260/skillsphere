@@ -79,9 +79,9 @@ const tttLoop = async (socket, userId) => {
           gameState.x = ownerFirst ? owner : otherPlayer;
           gameState.o = ownerFirst ? otherPlayer : owner;
           gameState.board = [
-            [".", ".", "."],
-            [".", ".", "."],
-            [".", ".", "."],
+            [null, null, null],
+            [null, null, null],
+            [null, null, null],
           ];
           for (const player of players) {
             const s = clients.get(player.id).socket;
@@ -98,8 +98,19 @@ const tttLoop = async (socket, userId) => {
           }
           break;
         }
+
+        case "move": {
+          console.log(data);
+          console.log(userId);
+          console.log(gameState);
+          break;
+        }
+
         default: {
           console.log("default hit");
+          console.log(data);
+          console.log(userId);
+          console.log(gameState);
         }
       }
     } catch (err) {

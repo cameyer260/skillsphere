@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { useGlobal } from "@/app/context/GlobalContext";
 import GameBoard from "../game-board";
 
-export default function GameComponent() {
+export default function GameComponent({
+  handleClick,
+}: {
+  handleClick: (r: number, c: number) => string | null;
+}) {
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
   useEffect(() => {
@@ -12,8 +16,8 @@ export default function GameComponent() {
   }, []);
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
   const { user } = useGlobal();
-  const [board, setBoard] = useState<string[][]>(() =>
-    Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => "X")),
+  const [board, setBoard] = useState<(string | null)[][]>(() =>
+    Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => null)),
   );
 
   return (
@@ -44,7 +48,11 @@ export default function GameComponent() {
         </div>
       </div>
       <div className="max-w-sm mx-auto">
-        <GameBoard board={board} isLightMode={lightMode} />
+        <GameBoard
+          board={board}
+          isLightMode={lightMode}
+          handleClick={handleClick}
+        />
       </div>
     </div>
   );

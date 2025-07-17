@@ -34,6 +34,14 @@ function OnlinePageComponent() {
     }
   }, [lobbyCode]);
 
+  const handleClick = (r: number, c: number) => {
+    console.log(`r: ${r}, c: ${c}`);
+    socketRef.current?.send(
+      JSON.stringify({ type: "move", payload: { r: r, c: c } }),
+    );
+    return null;
+  };
+
   useEffect(() => {
     const handleConnect = async () => {
       if (!user || loading || !lobbyCode) return;
@@ -130,6 +138,7 @@ function OnlinePageComponent() {
           console.log("Disconnected", event.code, event.reason);
           setWsConnected(false);
           setIsLobbyOwner(false);
+          setGameInProgress(false);
           socketRef.current = null;
           switch (event.code) {
             case 1008:
@@ -224,7 +233,7 @@ function OnlinePageComponent() {
     }
   };
 
-  if (gameInProgress) return <GameComponent />;
+  if (gameInProgress) return <GameComponent handleClick={handleClick} />;
 
   return wsConnected && lobbyCode ? (
     <LobbyComponent
