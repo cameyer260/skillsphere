@@ -20,12 +20,79 @@ const pongLoop = async (socket, ready) => {};
  */
 const tttLoop = async (socket, userId) => {
   // declare game state here
-  const gameState = {
+  const initialGameState = {
     turn: null,
     x: null,
     o: null,
     board: null,
   };
+
+  /**
+   * maps the turn of the gameState to the id of the player who's turn it currently is. used for deciding who's turn it is on a move message.
+   * @param the global gameState
+   * @returns the string player
+   */
+  const mapTurn = () => {
+    const lobbyId = clients.get(userId)?.lobbyId;
+    const gameState = gameStates.get(lobbyId);
+
+    return gameState.turn === "x" ? gameState.x : gameState.o;
+  };
+
+  /**
+   * maps the player character to their player id by fetching the game state. used in tttGameWon.
+   * @param character the character of the player whose id needs to be fetched.
+   * @returns the string id of the player.
+   */
+  const mapPlayer = (character) => {
+    const lobbyId = clients.get(userId)?.lobbyId;
+    const gameState = gameStates.get(lobbyId);
+    return character === "x" ? gameState.x : gameState.o;
+  };
+
+  /**
+   * helper function for tttLoop(). scans the board for a win.
+   * @return the id of the winner if someone has won or null if no one has.
+   */
+  const tttGameWon = () => {
+    const lobbyId = clients.get(userId)?.lobbyId;
+    const gameState = gameStates.get(lobbyId);
+
+    // first check for horizontal win (by row)
+    for (let row = 0; row < 3; row++) {
+      if (
+        gameState.board[row][0] &&
+        gameState.board[row][0] === gameState.board[row][1] &&
+        gameState.board[row][1] === gameState.board[row][2]
+      )
+        return mapPlayer(gameState.board[row][0]);
+    }
+    // then check for vertical win (by column)
+    for (let col = 0; col < 3; col++) {
+      if (
+        gameState.board[0][col] &&
+        gameState.board[0][col] === gameState.board[1][col] &&
+        gameState.board[1][col] === gameState.board[2][col]
+      )
+        return mapPlayer(gameState.board[0][col]);
+    }
+    // then check for diagonal win. first check top left to bottom right, then top right to bottom left.
+    if (
+      gameState.board[0][0] &&
+      gameState.board[0][0] === gameState.board[1][1] &&
+      gameState.board[1][1] === gameState.board[2][2]
+    )
+      return mapPlayer(gameState.board[0][0]);
+    if (
+      gameState.board[0][2] &&
+      gameState.board[0][2] === gameState.board[1][1] &&
+      gameState.board[1][1] === gameState.board[2][0]
+    )
+      return mapPlayer(gameState.board[0][2]);
+
+    return null;
+  };
+
   socket.on("message", (message) => {
     try {
       const data = JSON.parse(message.toString());
@@ -68,21 +135,23 @@ const tttLoop = async (socket, userId) => {
             break;
           }
 
-          console.log("this game is allowed to be started");
+          const lobbyId = clients.get(userId)?.lobbyId;
+
           // send a startgame message to both players including which player has the first turn, keep track of game state here locally which will be the offical state of the game
           const ownerFirst = Math.round(Math.random()) === 1; // randomly decide whether our owner goes first or not here
           // initialize game state
-          gameState.turn = "x";
+          initialGameState.turn = "x";
           let owner = players[0].isOwner ? players[0].id : players[1].id;
           let otherPlayer =
             players[0].isOwner === false ? players[0].id : players[1].id;
-          gameState.x = ownerFirst ? owner : otherPlayer;
-          gameState.o = ownerFirst ? otherPlayer : owner;
-          gameState.board = [
+          initialGameState.x = ownerFirst ? owner : otherPlayer;
+          initialGameState.o = ownerFirst ? otherPlayer : owner;
+          initialGameState.board = [
             [null, null, null],
             [null, null, null],
             [null, null, null],
           ];
+          gameStates.set(lobbyId, initialGameState); // set global gameStates accordingly.
           for (const player of players) {
             const s = clients.get(player.id).socket;
             if (s.readyState === WebSocket.OPEN) {
@@ -90,7 +159,7 @@ const tttLoop = async (socket, userId) => {
                 JSON.stringify({
                   type: "start_game",
                   payload: {
-                    gameState: gameState,
+                    gameState: initialGameState,
                   },
                 }),
               );
@@ -100,9 +169,57 @@ const tttLoop = async (socket, userId) => {
         }
 
         case "move": {
-          console.log(data);
-          console.log(userId);
-          console.log(gameState);
+          const lobbyId = clients.get(userId)?.lobbyId;
+          const gameState = gameStates.get(lobbyId);
+          // 1. make sure it is their turn
+          console.log(
+            `userId: ${userId} and lobbyId: ${lobbyId} and turn: ${gameState.turn} and turnId: ${mapTurn()}`,
+          );
+          if (userId !== mapTurn()) {
+            socket.send(
+              JSON.stringify({
+                type: "move",
+                payload: {
+                  success: false,
+                  reason: "It is not your turn to move",
+                },
+              }),
+            );
+            break;
+          }
+
+          // 2. make sure the spot on the board is open
+          if (gameState.board[data.payload.r][data.payload.c]) {
+            socket.send(
+              JSON.stringify({
+                type: "move",
+                payload: {
+                  success: false,
+                  reason: "That spot is already taken",
+                },
+              }),
+            );
+            break;
+          }
+
+          // 3. at this point we have a success, we check for gamewon and send back a success message to all players of the lobby informing them of the new move. we send our updated gameState back to them.
+          const newGs = JSON.parse(JSON.stringify(gameState));
+          newGs.board[data.payload.r][data.payload.c] = newGs.turn;
+          newGs.turn === "x" ? (newGs.turn = "o") : (newGs.turn = "x");
+          gameStates.set(lobbyId, newGs);
+          const winner = tttGameWon(); // will either return the id of the user who won or null if no one has won yet
+          const players = getPlayersInLobby(userId, clients);
+          for (const player of players) {
+            const s = clients.get(player.id).socket;
+            if (s.readyState === WebSocket.OPEN) {
+              s.send(
+                JSON.stringify({
+                  type: "move",
+                  payload: { success: true, gameWon: winner, gameState: newGs },
+                }),
+              );
+            }
+          }
           break;
         }
 
@@ -110,7 +227,6 @@ const tttLoop = async (socket, userId) => {
           console.log("default hit");
           console.log(data);
           console.log(userId);
-          console.log(gameState);
         }
       }
     } catch (err) {
@@ -164,6 +280,8 @@ const notifyPlayersChange = (userId) => {
 
 // map to hold all active client key value pairs. key=userId, value=WebSocket
 const clients = new Map();
+// map to hold all lobby gameStates, they will follow this schema: {key=lobby, value=data. data={game: "tic-tac-toe (or pong or whatever else)", gameState=gameState object}}
+const gameStates = new Map();
 
 server.on("connection", async (socket, req) => {
   const supabase = createClient(
@@ -293,11 +411,13 @@ server.on("connection", async (socket, req) => {
 
   socket.on("close", async () => {
     let playersInLobby = getPlayersInLobby(userId);
+    const lobbyId = clients.get(userId)?.lobbyId;
     clients.delete(userId);
     playersInLobby = playersInLobby.filter((_) => _.id !== userId);
 
     if (userId === lobbyOwnerId) {
       await supabase.from("lobbies").delete().eq("id", lobbyId);
+      gameStates.delete(lobbyId);
       for (const player of playersInLobby) {
         const client = clients.get(player.id);
         if (client && client.socket.readyState === WebSocket.OPEN) {

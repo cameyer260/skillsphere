@@ -8,6 +8,13 @@ import ErrorBanner from "@/components/error-message";
 import LobbyComponent from "./lobby-component";
 import GameComponent from "./game-component";
 
+interface GameState {
+  board: string[][];
+  o: string;
+  x: string;
+  turn: "o" | "x";
+}
+
 function OnlinePageComponent() {
   const searchParams = useSearchParams();
   const lobbyCode = searchParams.get("code");
@@ -27,6 +34,7 @@ function OnlinePageComponent() {
   const socketRef = useRef<WebSocket | null>(null);
   const [cd, setCd] = useState<string | null>(null); // variables that will hold the code gotten from out ws connection and passed down to lobby component
   const [gameInProgress, setGameInProgress] = useState<boolean>(false);
+  const localGameState = useState<GameState | null>(null);
 
   useEffect(() => {
     if (!lobbyCode) {
@@ -35,7 +43,6 @@ function OnlinePageComponent() {
   }, [lobbyCode]);
 
   const handleClick = (r: number, c: number) => {
-    console.log(`r: ${r}, c: ${c}`);
     socketRef.current?.send(
       JSON.stringify({ type: "move", payload: { r: r, c: c } }),
     );
@@ -118,14 +125,20 @@ function OnlinePageComponent() {
               setCd(message.payload);
               break;
             case "start_game":
-              console.log(
-                "the server has orded me (the client) to start the game!",
-              );
-              console.log(message.payload);
+              console.log("game is being started");
               setGameInProgress(true);
+              const gs = JSON.parse(message.payload.gameState);
+              console.log(gs);
               break;
             case "fail_start":
               console.log("failed to start game");
+              console.log(message.payload);
+              break;
+            case "move":
+              // 0. set our local gameState to the intial game state sent on the start game message. use our useState local gameState to populate the game board and all that, get rid of the local useState array you have doing that currently.
+              // 1. check if success === false. if it does, our player tried an invalid move. temporarily highlight the square they tried red and display the reason temporarily too.
+              // 2. update our gameState and it will then be displayed to the user.
+              // 3. check for gameWon not null, if it is not null, display an endgame screen and have a continue button to send the players back to their lobby where they can play again or leave/disband.
               console.log(message.payload);
               break;
             default:
