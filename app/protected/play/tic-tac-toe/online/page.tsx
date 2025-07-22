@@ -8,11 +8,12 @@ import ErrorBanner from "@/components/error-message";
 import LobbyComponent from "./lobby-component";
 import GameComponent from "./game-component";
 
-interface GameState {
+export interface GameState {
   board: string[][];
   o: string;
   x: string;
   turn: "o" | "x";
+  gameWon: string | null;
 }
 
 function OnlinePageComponent() {
@@ -34,13 +35,18 @@ function OnlinePageComponent() {
   const socketRef = useRef<WebSocket | null>(null);
   const [cd, setCd] = useState<string | null>(null); // variables that will hold the code gotten from out ws connection and passed down to lobby component
   const [gameInProgress, setGameInProgress] = useState<boolean>(false);
-  const localGameState = useState<GameState | null>(null);
+  const [localGameState, setLocalGameState] = useState<GameState | null>(null);
 
   useEffect(() => {
     if (!lobbyCode) {
       setLocalErr(null);
     }
   }, [lobbyCode]);
+
+  useEffect(() => {
+    console.log(localGameState);
+    if (localGameState?.gameWon) alert(localGameState?.gameWon);
+  }, [localGameState?.gameWon]);
 
   const handleClick = (r: number, c: number) => {
     socketRef.current?.send(
@@ -127,19 +133,25 @@ function OnlinePageComponent() {
             case "start_game":
               console.log("game is being started");
               setGameInProgress(true);
-              const gs = JSON.parse(message.payload.gameState);
-              console.log(gs);
+              const gs = message.payload.gameState;
+              setLocalGameState(gs);
               break;
             case "fail_start":
               console.log("failed to start game");
               console.log(message.payload);
               break;
+
             case "move":
+              console.log(message.payload);
+              if (message.payload.success) {
+                setLocalGameState(message.payload.gameState);
+              } else {
+                setLocalErr(message.payload.reason);
+              }
               // 0. set our local gameState to the intial game state sent on the start game message. use our useState local gameState to populate the game board and all that, get rid of the local useState array you have doing that currently.
               // 1. check if success === false. if it does, our player tried an invalid move. temporarily highlight the square they tried red and display the reason temporarily too.
               // 2. update our gameState and it will then be displayed to the user.
               // 3. check for gameWon not null, if it is not null, display an endgame screen and have a continue button to send the players back to their lobby where they can play again or leave/disband.
-              console.log(message.payload);
               break;
             default:
               console.log("Unexcepted message from web socket: ");
@@ -246,7 +258,13 @@ function OnlinePageComponent() {
     }
   };
 
-  if (gameInProgress) return <GameComponent handleClick={handleClick} />;
+  if (gameInProgress)
+    return (
+      <GameComponent
+        handleClick={handleClick}
+        localGameState={localGameState}
+      />
+    );
 
   return wsConnected && lobbyCode ? (
     <LobbyComponent

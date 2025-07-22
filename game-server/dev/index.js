@@ -25,6 +25,7 @@ const tttLoop = async (socket, userId) => {
     x: null,
     o: null,
     board: null,
+    gameWon: null,
   };
 
   /**
@@ -42,21 +43,19 @@ const tttLoop = async (socket, userId) => {
   /**
    * maps the player character to their player id by fetching the game state. used in tttGameWon.
    * @param character the character of the player whose id needs to be fetched.
+   * @param gameState the gameState that this needs to be done on.
    * @returns the string id of the player.
    */
-  const mapPlayer = (character) => {
-    const lobbyId = clients.get(userId)?.lobbyId;
-    const gameState = gameStates.get(lobbyId);
+  const mapPlayer = (character, gameState) => {
     return character === "x" ? gameState.x : gameState.o;
   };
 
   /**
-   * helper function for tttLoop(). scans the board for a win.
-   * @return the id of the winner if someone has won or null if no one has.
+   * helper function for tttLoop(). scans the board for a win and sets the gameState's gameWon to the id of the winner if someone has won or null if no one has.
+   * @param gameState the gameState that you would like to find a win on
    */
-  const tttGameWon = () => {
-    const lobbyId = clients.get(userId)?.lobbyId;
-    const gameState = gameStates.get(lobbyId);
+  const tttGameWon = (gameState) => {
+    if (!gameState) return;
 
     // first check for horizontal win (by row)
     for (let row = 0; row < 3; row++) {
@@ -64,8 +63,10 @@ const tttLoop = async (socket, userId) => {
         gameState.board[row][0] &&
         gameState.board[row][0] === gameState.board[row][1] &&
         gameState.board[row][1] === gameState.board[row][2]
-      )
-        return mapPlayer(gameState.board[row][0]);
+      ) {
+        gameState.gameWon = mapPlayer(gameState.board[row][0], gameState);
+        return;
+      }
     }
     // then check for vertical win (by column)
     for (let col = 0; col < 3; col++) {
@@ -73,30 +74,35 @@ const tttLoop = async (socket, userId) => {
         gameState.board[0][col] &&
         gameState.board[0][col] === gameState.board[1][col] &&
         gameState.board[1][col] === gameState.board[2][col]
-      )
-        return mapPlayer(gameState.board[0][col]);
+      ) {
+        gameState.gameWon = mapPlayer(gameState.board[0][col], gameState);
+        return;
+      }
     }
     // then check for diagonal win. first check top left to bottom right, then top right to bottom left.
     if (
       gameState.board[0][0] &&
       gameState.board[0][0] === gameState.board[1][1] &&
       gameState.board[1][1] === gameState.board[2][2]
-    )
-      return mapPlayer(gameState.board[0][0]);
+    ) {
+      gameState.gameWon = mapPlayer(gameState.board[0][0], gameState);
+      return;
+    }
     if (
       gameState.board[0][2] &&
       gameState.board[0][2] === gameState.board[1][1] &&
       gameState.board[1][1] === gameState.board[2][0]
-    )
-      return mapPlayer(gameState.board[0][2]);
-
-    return null;
+    ) {
+      gameState.gameWon = mapPlayer(gameState.board[0][2], gameState);
+      return;
+    }
+    gameState.gameWon = null;
   };
 
-  socket.on("message", (message) => {
+  socket.on("message", async (message) => {
     try {
       const data = JSON.parse(message.toString());
-      const players = getPlayersInLobby(userId, clients);
+      const players = getPlayersInLobby(userId);
 
       switch (data.type) {
         // case that the owner hit the start game button
@@ -151,6 +157,7 @@ const tttLoop = async (socket, userId) => {
             [null, null, null],
             [null, null, null],
           ];
+          initialGameState.gameWon = null;
           gameStates.set(lobbyId, initialGameState); // set global gameStates accordingly.
           for (const player of players) {
             const s = clients.get(player.id).socket;
@@ -203,23 +210,45 @@ const tttLoop = async (socket, userId) => {
           }
 
           // 3. at this point we have a success, we check for gamewon and send back a success message to all players of the lobby informing them of the new move. we send our updated gameState back to them.
-          const newGs = JSON.parse(JSON.stringify(gameState));
-          newGs.board[data.payload.r][data.payload.c] = newGs.turn;
-          newGs.turn === "x" ? (newGs.turn = "o") : (newGs.turn = "x");
-          gameStates.set(lobbyId, newGs);
-          const winner = tttGameWon(); // will either return the id of the user who won or null if no one has won yet
-          const players = getPlayersInLobby(userId, clients);
+          // const newGs = JSON.parse(JSON.stringify(gameState));
+          gameState.board[data.payload.r][data.payload.c] = gameState.turn;
+          gameState.turn === "x"
+            ? (gameState.turn = "o")
+            : (gameState.turn = "x");
+          // gameStates.set(lobbyId, newGs);
+          tttGameWon(gameState); // will either return the id of the user who won or null if no one has won yet
+          const players = getPlayersInLobby(userId);
           for (const player of players) {
             const s = clients.get(player.id).socket;
             if (s.readyState === WebSocket.OPEN) {
               s.send(
                 JSON.stringify({
                   type: "move",
-                  payload: { success: true, gameWon: winner, gameState: newGs },
+                  payload: { success: true, gameState: gameState },
                 }),
               );
             }
           }
+          break;
+        }
+
+        case "kick_player": {
+          // 1. is the player who sent this message the lobby owner? if not send error message back
+          const lobbyId = clients.get(userId)?.lobbyId;
+          const gameState = gameStates.get(lobbyId);
+          if (clients.get(userId).isOwner !== true) {
+            socket.send(
+              JSON.stringify({
+                type: "kick_player_error",
+                payload: {
+                  reason: "You must be owner to kick someone from the lobby.",
+                },
+              }),
+            );
+          }
+          // 2. end their socket connection. socket.onClose will handle removing them from states and lobbies.
+          clients.get(data.payload.id).socket.close(1000, "Owner has removed you from the lobby");
+          // TODO: leave gamestate alone for now and set timer for the player to be able to join back
           break;
         }
 

@@ -3,11 +3,14 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { useGlobal } from "@/app/context/GlobalContext";
 import GameBoard from "../game-board";
+import { GameState } from "./page";
 
 export default function GameComponent({
   handleClick,
+  localGameState,
 }: {
   handleClick: (r: number, c: number) => string | null;
+  localGameState: GameState | null,
 }) {
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
@@ -16,9 +19,6 @@ export default function GameComponent({
   }, []);
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
   const { user } = useGlobal();
-  const [board, setBoard] = useState<(string | null)[][]>(() =>
-    Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => null)),
-  );
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] p-4">
@@ -49,9 +49,9 @@ export default function GameComponent({
       </div>
       <div className="max-w-sm mx-auto">
         <GameBoard
-          board={board}
           isLightMode={lightMode}
           handleClick={handleClick}
+          localGameState={localGameState}
         />
       </div>
     </div>

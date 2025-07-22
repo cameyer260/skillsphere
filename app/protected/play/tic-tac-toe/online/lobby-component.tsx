@@ -50,6 +50,12 @@ export default function LobbyComponent({
     router.push("/protected/play/tic-tac-toe/online");
   };
 
+  const kickPlayer = (id: string): void => {
+    socket.current?.send(
+      JSON.stringify({ type: "kick_player", payload: { id: id } }),
+    );
+  };
+
   if (!user) {
     router.push("/protected/play/tic-tac-toe/online");
     setError("Please logout and log back in and try rejoining the lobby");
@@ -65,7 +71,7 @@ export default function LobbyComponent({
       <div className="flex justify-center mt-6 text-2xl">
         <div className="absolute left-6 flex gap-4">
           <h1>Lobby Code: {code}</h1>
-          <CopyButton lightMode={lightMode} code={code}/>
+          <CopyButton lightMode={lightMode} code={code} />
         </div>
         <h1 className="text-center text-4xl">{lobbyName}</h1>
         <div className="absolute right-6 flex gap-4">
@@ -130,7 +136,7 @@ export default function LobbyComponent({
                   height={50}
                 />
               ) : isOwner ? (
-                <button>Kick</button>
+                <button onClick={() => kickPlayer(_.id)}>Kick</button>
               ) : (
                 ""
               )}
