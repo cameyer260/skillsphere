@@ -26,6 +26,7 @@ const tttLoop = async (socket, userId) => {
     o: null,
     board: null,
     gameWon: null,
+    draw: false,
   };
 
   /**
@@ -97,6 +98,16 @@ const tttLoop = async (socket, userId) => {
       return;
     }
     gameState.gameWon = null;
+    // check for draw
+    let oneEmpty = false;
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (!gameState.board[r][c]) oneEmpty = true;
+      }
+    }
+    !gameState.gameWon && !oneEmpty
+      ? (gameState.draw = true)
+      : (gameState.draw = false); // if no one has one and there is not a single empty space in the board, we have reached a draw
   };
 
   socket.on("message", async (message) => {
@@ -158,6 +169,7 @@ const tttLoop = async (socket, userId) => {
             [null, null, null],
           ];
           initialGameState.gameWon = null;
+          initialGameState.draw = false;
           gameStates.set(lobbyId, initialGameState); // set global gameStates accordingly.
           for (const player of players) {
             const s = clients.get(player.id).socket;
@@ -478,22 +490,3 @@ server.on("connection", async (socket, req) => {
     }
   });
 });
-
-/**
- * 1. user auth:
- *  - check if user is signed in, if not close the web socket and handle that response/error on client side (so far we have the socket being closed if the user is not signed in in the prod/index.js file)
- *  - make sure the user is in the correct lobby
- * 2. check what game is being played and call a different function for each, maybe pass a param with a gamename variable that the ws-server can harvest to get this info
- * 3. inside the tic tac toe function, start the game. send a ready message to the owner client specifically where they will not be allowed to hit start.
- * 4. listen to a start game message from the owner, verify that the game is startable, and start it.
- * 5. decide who goes first randomly, the owner or the player (2 person game so just use mathrandom) and keep a turn counter varaible in the code. listen to moves on both sides and accept or reject them based on their validity and whose turn it is. on successful moves, send it to the other client (the owner or the player)
- * 6. handle game won logic and record the info in some game records table that you create that just ties. games record table will have an id, a user_id foregin key that ties to a user, a game that was played, and who won. this will be used to determine the user's rank following the rules on the whiteboard in your room.
- * 7. handle weird use cases. user leaves the website mid game and comes back, maybe they leave the site entirely or go somehwere else on it. ask chatgpt on how to handle this, whether you should remove them from the lobby and end them game or maybe put in a timeout counter to end the game if they do not try to re join in that time.
- * 7. i think i should have the websocket remove them from the lobby on disconnect. if this happens mid game, we will store the game state and pause the game for 30 seconds allowing the user that left to join back and if they do not then the game will be considered forfeited by that player.
- */
-
-/*
- * 1. just need to handle on the client side, otherwise done.
- * 2. done
- * 3.
- */

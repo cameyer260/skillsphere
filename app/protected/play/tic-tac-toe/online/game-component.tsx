@@ -41,13 +41,17 @@ export default function GameComponent({
   }, []);
 
   useEffect(() => {
+    if (localGameState.draw) {
+      setEndGame(true);
+      setWonMessage("Neither player won!");
+    }
     if (localGameState.gameWon) {
       setEndGame(true);
       setWonMessage(
         `${localGameState?.gameWon === lobbyPlayers[0].id ? lobbyPlayers[0].username : user?.username} has won!`,
       );
     }
-  }, [localGameState?.gameWon]);
+  }, [localGameState.gameWon, localGameState.draw]);
   
   
   const backToHome = () => {

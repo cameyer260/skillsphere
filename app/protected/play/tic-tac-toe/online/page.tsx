@@ -14,6 +14,7 @@ export interface GameState {
   x: string;
   turn: "o" | "x";
   gameWon: string | null;
+  draw: boolean;
 }
 
 export interface LobbyPlayer {
