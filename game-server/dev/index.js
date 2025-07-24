@@ -178,10 +178,6 @@ const tttLoop = async (socket, userId) => {
         case "move": {
           const lobbyId = clients.get(userId)?.lobbyId;
           const gameState = gameStates.get(lobbyId);
-          // 1. make sure it is their turn
-          console.log(
-            `userId: ${userId} and lobbyId: ${lobbyId} and turn: ${gameState.turn} and turnId: ${mapTurn()}`,
-          );
           if (userId !== mapTurn()) {
             socket.send(
               JSON.stringify({
@@ -247,7 +243,9 @@ const tttLoop = async (socket, userId) => {
             );
           }
           // 2. end their socket connection. socket.onClose will handle removing them from states and lobbies.
-          clients.get(data.payload.id).socket.close(1000, "Owner has removed you from the lobby");
+          clients
+            .get(data.payload.id)
+            .socket.close(1000, "Owner has removed you from the lobby");
           // TODO: leave gamestate alone for now and set timer for the player to be able to join back
           break;
         }

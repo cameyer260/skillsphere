@@ -16,6 +16,13 @@ export interface GameState {
   gameWon: string | null;
 }
 
+export interface LobbyPlayer {
+  username: string;
+  id: string;
+  owner: boolean;
+  avatarIndex: number;
+}
+
 function OnlinePageComponent() {
   const searchParams = useSearchParams();
   const lobbyCode = searchParams.get("code");
@@ -23,10 +30,7 @@ function OnlinePageComponent() {
   const supabase = createClient();
   const [code, setCode] = useState<string>("");
   const [partyName, setPartyName] = useState<string>("");
-  const [lobbyPlayers, setLobbyPlayers] = useState<
-    | { username: string; id: string; owner: boolean; avatarIndex: number }[]
-    | null
-  >(null);
+  const [lobbyPlayers, setLobbyPlayers] = useState<LobbyPlayer[] | null>(null);
   const [lobbyName, setLobbyName] = useState<string | null>(null);
   const [localErr, setLocalErr] = useState<string | null>(null);
   const { user, loading } = useGlobal();
@@ -42,11 +46,6 @@ function OnlinePageComponent() {
       setLocalErr(null);
     }
   }, [lobbyCode]);
-
-  useEffect(() => {
-    console.log(localGameState);
-    if (localGameState?.gameWon) alert(localGameState?.gameWon);
-  }, [localGameState?.gameWon]);
 
   const handleClick = (r: number, c: number) => {
     socketRef.current?.send(
@@ -131,27 +130,19 @@ function OnlinePageComponent() {
               setCd(message.payload);
               break;
             case "start_game":
-              console.log("game is being started");
               setGameInProgress(true);
               const gs = message.payload.gameState;
               setLocalGameState(gs);
               break;
             case "fail_start":
-              console.log("failed to start game");
-              console.log(message.payload);
+              setLocalErr(message.payload);
               break;
-
             case "move":
-              console.log(message.payload);
               if (message.payload.success) {
                 setLocalGameState(message.payload.gameState);
               } else {
                 setLocalErr(message.payload.reason);
               }
-              // 0. set our local gameState to the intial game state sent on the start game message. use our useState local gameState to populate the game board and all that, get rid of the local useState array you have doing that currently.
-              // 1. check if success === false. if it does, our player tried an invalid move. temporarily highlight the square they tried red and display the reason temporarily too.
-              // 2. update our gameState and it will then be displayed to the user.
-              // 3. check for gameWon not null, if it is not null, display an endgame screen and have a continue button to send the players back to their lobby where they can play again or leave/disband.
               break;
             default:
               console.log("Unexcepted message from web socket: ");
@@ -258,11 +249,24 @@ function OnlinePageComponent() {
     }
   };
 
+  const backToLobby = (): void => {
+    // resets all our game related variables
+    // react will handle sending us back home
+    // eventually I will add how this game affected your rank but for now I will not deal with that, this is an MVP
+    setLocalErr(null);
+    setGameInProgress(false);
+    setLocalGameState(null);
+  };
+
   if (gameInProgress)
     return (
       <GameComponent
         handleClick={handleClick}
         localGameState={localGameState}
+        lobbyPlayers={lobbyPlayers}
+        localErr={localErr}
+        setLocalErr={setLocalErr}
+        backToLobby={backToLobby}
       />
     );
 

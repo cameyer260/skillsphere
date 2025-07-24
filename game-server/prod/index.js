@@ -37,7 +37,6 @@ wss.on("connection", async (socket, req) => {
 
   try {
     const { data, error } = await supabase.auth.getUser(token);
-    console.log(data, error);
     if (!data || error) socket.close(1008, "Could not authenticate user");
   } catch (err) {
     console.log("Unexpected error: ", err);
