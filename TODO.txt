@@ -1,17 +1,13 @@
-- add supabase edge function for syncing new user accounts to the profiles table. current fix for the problem is inserting the profile on sucessful signups in the singup function in actions.ts, but once we add other forms of auth (sign in through google, github, etc.) this fix will not work and we will need a supabase edge function to handle it
-- fix signup flow, make it smoother and less clunky
-- add on temporary guest account and allow them to play live against friends or any of the games for a limit amount of time (https://supabase.com/docs/guides/auth/auth-anonymous)
 - add supabase edge function to rate limit to prevent spam
 - maybe just remove favorite games, or add safety that does not allow users to just add whatever they want to it
-
-
-
-NEXT TODO IMPORTANT********
-- finish friends search method
+- FIX THE ISSUE WHERE WHEN YOU ADD A NEW FRIEND ON THE ACCOUNT PAGE THEY DISSAPPEAR FROM THE SEARCH RESULTS. ALSO EDIT IT SO THAT THE STATUS OF YOUR FRIENDSHIP SHOWS NEXT TO THEM, LIKE IF YOU HAVE THEM ADDED AND STATUS IS PENDING ITLL SHOW PENDING, OR IF THEY ADDED YOU YOU CAN ACCEPT OR REJECT FROM THERE. JUST POLISH ALL THAT STUFF UP SO IT WORKS BETTER.
 - make this whole site publicly accessible. delay requiring sign-in/sign-up for as long as possible
-
+- finish friends search method
 
 - IMMEDIATELY FIX THIS FIRST*****************
+- LOOK INTO SENDING AN INVITE LINK AND THE PERSON ON SAFARI JUST GETS SIGNED OUT AND IT DOES NOT WORK. SEE IF THIS IS JUST ON SAFARI, OR ON CHROME TOO WHEN YOU HAVE ANOTHER PERSON TEST IT OUT. FIX IT.
 - add sign up with google
-
-- FIX THE ISSUE WHERE WHEN YOU ADD A NEW FRIEND ON THE ACCOUNT PAGE THEY DISSAPPEAR FROM THE SEARCH RESULTS. ALSO EDIT IT SO THAT THE STATUS OF YOUR FRIENDSHIP SHOWS NEXT TO THEM, LIKE IF YOU HAVE THEM ADDED AND STATUS IS PENDING ITLL SHOW PENDING, OR IF THEY ADDED YOU YOU CAN ACCEPT OR REJECT FROM THERE. JUST POLISH ALL THAT STUFF UP SO IT WORKS BETTER.
+- add supabase edge function for syncing new user accounts to the profiles table. current fix for the problem is inserting the profile on sucessful signups in the singup function in actions.ts, but once we add other forms of auth (sign in through google, github, etc.) this fix will not work and we will need a supabase edge function to handle it
+- then do one of these two:
+1. add some more simple turn based games to have online play, they do not need local versions but can have them too if it works for the select game 
+2. create a universal lobby page that can be used for any game. have it take a game name param that it can inject into the lobby title. then the online page for the select game will handle connecting to the web socket on the right game and so on and so forth.

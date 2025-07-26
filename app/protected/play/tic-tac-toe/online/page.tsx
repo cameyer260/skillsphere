@@ -196,7 +196,7 @@ function OnlinePageComponent() {
         socketRef.current.close(1000, "Component unmounted");
       }
     };
-  }, [searchParams, loading]);
+  }, [lobbyCode, loading]);
 
   const handleJoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
