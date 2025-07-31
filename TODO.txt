@@ -5,8 +5,7 @@
 - finish friends search method
 
 - IMMEDIATELY FIX THIS FIRST*****************
-- LOOK INTO SENDING AN INVITE LINK AND THE PERSON ON SAFARI JUST GETS SIGNED OUT AND IT DOES NOT WORK. SEE IF THIS IS JUST ON SAFARI, OR ON CHROME TOO WHEN YOU HAVE ANOTHER PERSON TEST IT OUT. FIX IT.
-- add sign up with google
+- finish account page that complies with googles oauth requirements, test google sign in to make sure it works and add google sign up
 - add supabase edge function for syncing new user accounts to the profiles table. current fix for the problem is inserting the profile on sucessful signups in the singup function in actions.ts, but once we add other forms of auth (sign in through google, github, etc.) this fix will not work and we will need a supabase edge function to handle it
 - then do one of these two:
 1. add some more simple turn based games to have online play, they do not need local versions but can have them too if it works for the select game 

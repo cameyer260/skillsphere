@@ -41,6 +41,8 @@ export default function RootLayout({
                   <div className="flex items-center gap-2">
                     <ThemeSwitcher />
                   </div>
+                  <Link className="px-2" href="/about">About</Link>
+                  <Link className="px-2" href="/privacy-policy">Privacy Policy</Link>
                 </div>
                 <HeaderAuth />
               </div>

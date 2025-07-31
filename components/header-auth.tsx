@@ -55,8 +55,8 @@ export default function AuthButton() {
           </>
         </Link>
       ) : (
-        <Link href="/about" className="font-semibold">
-          About
+        <Link href="/sign-in" className="font-semibold">
+          Sign In
         </Link>
       )}
       {!loading && authUser && (

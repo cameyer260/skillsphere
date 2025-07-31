@@ -51,17 +51,21 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
 
   const supabase = createClient();
 
-	// useEffect to detect mobile users
-	useEffect(() => {
-		// Check for touch points - primary indicator
-		const touchPoints = navigator.maxTouchPoints || 0;
-		const isTouchPrimary = touchPoints > 2;
+  // useEffect to detect mobile users
+  useEffect(() => {
+    // Check for touch points - primary indicator
+    const touchPoints = navigator.maxTouchPoints || 0;
+    const isTouchPrimary = touchPoints > 2;
 
-		setIsMobile(isTouchPrimary);
-	}, []);
+    setIsMobile(isTouchPrimary);
+  }, []);
 
   useEffect(() => {
-    if (pathname === "/sign-in" || pathname === "/sign-up" || pathname === "/about") {
+    if (
+      pathname === "/sign-in" ||
+      pathname === "/sign-up" ||
+      pathname === "/about"
+    ) {
       return;
     }
     const fetchData = async () => {
@@ -77,9 +81,6 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       if (!rawUser) {
-        alert(
-          "Error fetching user. Please try refreshing the page or logging out and logging back in.",
-        );
         setLoading(false);
         return;
       }
@@ -120,7 +121,10 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
           avatar_index: profile.avatar_index,
         });
       }
-      const { data: friends, error: friendsError} = await supabase.rpc('get_friends_profiles', {});
+      const { data: friends, error: friendsError } = await supabase.rpc(
+        "get_friends_profiles",
+        {},
+      );
       if (!friendsError) {
         setFriends(
           friends.map((el: Friend) => {
@@ -139,7 +143,15 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <GlobalContext.Provider
-      value={{ user, authUser, friends, loading, trigger, setTrigger, isMobile }}
+      value={{
+        user,
+        authUser,
+        friends,
+        loading,
+        trigger,
+        setTrigger,
+        isMobile,
+      }}
     >
       {children}
     </GlobalContext.Provider>
