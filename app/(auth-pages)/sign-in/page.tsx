@@ -46,7 +46,7 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
         </div>
       </form>
       <h1>or</h1>
-      <GoogleOAuthButton />
+      <GoogleOAuthButton buttonText={"signin_with"}/>
     </div>
   );
 }

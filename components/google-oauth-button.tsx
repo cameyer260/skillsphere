@@ -1,57 +1,78 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 declare global {
   interface Window {
+    google: any;
     handleSignInWithGoogle: (response: any) => void;
   }
 }
 
-export default function GoogleOAuthButton() {
+export default function GoogleOAuthButton({
+  buttonText,
+}: {
+  buttonText: "signin_with" | "signup_with";
+}) {
   const supabase = createClient();
-  const [mounted, setMounted] = useState<boolean>(false);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    window.handleSignInWithGoogle = async (response) => {
+    // Ensure the callback function is defined on the window object
+    // so it can be called by the Google script.
+    window.handleSignInWithGoogle = async (response: any) => {
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: "google",
         token: response.credential,
       });
 
       if (error) {
-        console.log(error);
+        console.log("Error signing in with Google:", error);
       } else {
+        // Redirect user after successful sign-in.
         window.location.href = "/protected";
       }
     };
-    setMounted(true);
-  }, []);
 
-  if (!mounted) return null;
+    // Function to initialize and render the Google Sign-In button.
+    const renderGoogleButton = () => {
+      if (window.google && googleButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id:
+            "488615336590-b397e1ad1dltgcnubgsgnh8q47esirio.apps.googleusercontent.com",
+          callback: window.handleSignInWithGoogle,
+        });
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          type: "standard",
+          shape: "rectangular",
+          theme: "outline",
+          text: buttonText,
+          size: "large",
+          logo_alignment: "left",
+        });
+      }
+    };
 
-  return (
-    <div>
-      <script src="https://accounts.google.com/gsi/client" async></script>
-      <div
-        id="g_id_onload"
-        data-client_id="488615336590-b397e1ad1dltgcnubgsgnh8q47esirio.apps.googleusercontent.com"
-        data-context="signin"
-        data-ux_mode="popup"
-        data-callback="handleSignInWithGoogle"
-        data-auto_prompt="false"
-      ></div>
+    // Check if the Google script is already loaded.
+    if (
+      document.querySelector(
+        "script[src='https://accounts.google.com/gsi/client']",
+      )
+    ) {
+      renderGoogleButton();
+    } else {
+      // If not, create and append the script to the document head.
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = renderGoogleButton;
+      document.head.appendChild(script);
+    }
+  }, [buttonText, supabase]);
 
-      <div
-        className="g_id_signin"
-        data-type="standard"
-        data-shape="rectangular"
-        data-theme="outline"
-        data-text="signin_with"
-        data-size="large"
-        data-logo_alignment="left"
-      ></div>
-    </div>
-  );
+  // The div that will contain the Google button.
+  // The 'ref' allows Google's script to target this specific element.
+  return <div ref={googleButtonRef}></div>;
 }
