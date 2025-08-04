@@ -20,13 +20,16 @@ export default function AuthButton() {
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
   const pathname = usePathname();
 
+  if (loading) return null;
+
   return (
     <div className="flex items-center gap-4">
-      {pathname !== "/sign-up" &&
-      pathname !== "/sign-in" &&
-      pathname !== "/about" ? (
-        <Link href="/protected/account" className="flex flex-row items-center">
-          {!loading && user && (
+      {user ? (
+        <>
+          <Link
+            href="/protected/account"
+            className="flex flex-row items-center gap-4"
+          >
             <Image
               src={`/account-page/avatar-icons/${user.avatar_index === 0 ? (lightMode ? user.avatar_index + "b" : user.avatar_index + "w") : user.avatar_index}.png`}
               alt="Profile Picture"
@@ -34,37 +37,30 @@ export default function AuthButton() {
               height={50}
               className="rounded-full pr-2"
             />
-          )}
-          <>
-            {!loading && !isMobile ? (
-              user ? (
-                user.username ? (
-                  <>
-                    Hey, 
-                    <b>
-                      <u>{DOMPurify.sanitize(user.username)}!</u>
-                    </b>
-                  </>
-                ) : (
-                  <b>
-                    <u>add a username here</u>
-                  </b>
-                )
-              ) : null
-            ) : null}
-          </>
-        </Link>
+            {!isMobile && user.username ? (
+              <p>
+                Hey,{" "}
+                <b>
+                  <u>{DOMPurify.sanitize(user.username)}</u>
+                </b>
+                !
+              </p>
+            ) : (
+              <b>
+                <u>Add a username</u>
+              </b>
+            )}
+          </Link>
+          <form action={signOutAction}>
+            <Button type="submit" variant={"outline"}>
+              Sign out
+            </Button>
+          </form>
+        </>
       ) : (
         <Link href="/sign-in" className="font-semibold">
           Sign In
         </Link>
-      )}
-      {!loading && authUser && (
-        <form action={signOutAction}>
-          <Button type="submit" variant={"outline"}>
-            Sign out
-          </Button>
-        </form>
       )}
     </div>
   );

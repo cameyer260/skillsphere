@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 declare global {
   interface Window {
@@ -17,6 +18,7 @@ export default function GoogleOAuthButton({
 }) {
   const supabase = createClient();
   const googleButtonRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Ensure the callback function is defined on the window object
@@ -27,11 +29,28 @@ export default function GoogleOAuthButton({
         token: response.credential,
       });
 
-      if (error) {
-        console.log("Error signing in with Google:", error);
-      } else {
-        // Redirect user after successful sign-in.
-        window.location.href = "/protected";
+      try {
+        if (error) {
+          throw new Error(`Error signing in with Google: ${error}`);
+        } else if (data.user) {
+          const res = await fetch("/api/profiles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.user.id }),
+          });
+          const json = await res.json();
+          if (!res.ok)
+            throw new Error(
+              `Status: ${res.status}. Error message: ${json.error_message}`,
+            );
+          // Redirect user after successful sign-in.
+          window.location.href = "/protected";
+        } else throw new Error("Failed to create profile. 'data.user' is null");
+      } catch (error) {
+        console.log(error);
+        alert(error); // TODO: make this more stylish, add an error banner
+        await supabase.auth.signOut();
+        router.push("/sign-in");
       }
     };
 

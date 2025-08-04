@@ -61,13 +61,6 @@ export const GlobalProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (
-      pathname === "/sign-in" ||
-      pathname === "/sign-up" ||
-      pathname === "/about"
-    ) {
-      return;
-    }
     const fetchData = async () => {
       let attempts = 0;
       let rawUser = null;

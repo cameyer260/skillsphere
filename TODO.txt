@@ -5,7 +5,6 @@
 - finish friends search method
 
 - IMMEDIATELY FIX THIS FIRST*****************
-- add supabase edge function for syncing new user accounts to the profiles table. current fix for the problem is inserting the profile on sucessful signups in the singup function in actions.ts, but once we add other forms of auth (sign in through google, github, etc.) this fix will not work and we will need a supabase edge function to handle it
 - then do one of these two:
 1. add some more simple turn based games to have online play, they do not need local versions but can have them too if it works for the select game 
 2. create a universal lobby page that can be used for any game. have it take a game name param that it can inject into the lobby title. then the online page for the select game will handle connecting to the web socket on the right game and so on and so forth.
