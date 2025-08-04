@@ -49,7 +49,8 @@ export default async function Signup(props: {
           <FormMessage message={searchParams} />
         </div>
       </form>
-      <h1>or</h1>
+      <p>or</p>
+      <p className="mb-2">(recommended)</p>
       <GoogleOAuthButton buttonText={"signup_with"} />
     </div>
   );

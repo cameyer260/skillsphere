@@ -5,7 +5,6 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createServiceRoleClient();
     const body = await req.json();
-    console.log(`body: ${JSON.stringify(body)}`);
     const { error } = await supabase.from("profiles").insert({ id: body.id });
     if (error && error.code !== "23505") {
       console.error(error);
