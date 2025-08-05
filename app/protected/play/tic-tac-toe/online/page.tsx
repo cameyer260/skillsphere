@@ -43,10 +43,13 @@ function OnlinePageComponent() {
   const [localGameState, setLocalGameState] = useState<GameState | null>(null);
 
   useEffect(() => {
-    if (!lobbyCode) {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      setLocalErr(decodeURIComponent(errorParam));
+    } else if (!lobbyCode) {
       setLocalErr(null);
     }
-  }, [lobbyCode]);
+  }, [lobbyCode, searchParams]);
 
   const handleClick = (r: number, c: number) => {
     socketRef.current?.send(
@@ -153,21 +156,39 @@ function OnlinePageComponent() {
 
         ws.onclose = (event) => {
           console.log("Disconnected", event.code, event.reason);
-          setWsConnected(false);
-          setIsLobbyOwner(false);
-          setGameInProgress(false);
-          socketRef.current = null;
           switch (event.code) {
+            case 1000:
+              router.push("/protected/play/tic-tac-toe/online");
+              break;
             case 1008:
-              setLocalErr(
-                "No lobby was found with that code. Please double-check and try again.",
+              router.push(
+                `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                  event.reason,
+                )}`,
               );
               break;
-            case 1000:
-              setLocalErr(null);
+            case 4000:
+              router.push(
+                `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                  event.reason,
+                )}`,
+              );
               break;
             default:
-              setLocalErr("Disconnected from lobby unexpectedly");
+              if (event.reason) {
+                router.push(
+                  `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                    event.reason,
+                  )}`,
+                );
+                return;
+              }
+              router.push(
+                `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                  "Disconnected from lobby unexpectedly.",
+                )}`,
+              );
+              return;
           }
         };
         ws.onerror = (err) => {
@@ -175,17 +196,21 @@ function OnlinePageComponent() {
             socketRef.current?.readyState !== WebSocket.CLOSING &&
             socketRef.current?.readyState !== WebSocket.CLOSED
           ) {
-            setLocalErr("Error connecting to lobby");
-            setWsConnected(false);
-            router.push("/protected/play/tic-tac-toe/online");
+            router.push(
+              `/protected/play/tic-tac-toe/online${encodeURIComponent("Error connecting to lobby.")}`,
+            );
+            return;
           }
         };
         // finally, on success show them the lobby-component instead of the regular joining page
       } catch (error) {
         console.log(error);
         if (error instanceof Error) {
-          setLocalErr(error.message);
-          router.push("/protected/play/tic-tac-toe/online");
+          router.push(
+            `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+              error.message,
+            )}`,
+          );
           return;
         }
       }

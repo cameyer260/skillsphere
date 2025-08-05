@@ -5,6 +5,8 @@
 - finish friends search method
 
 - IMMEDIATELY FIX THIS FIRST*****************
+- continue working on page.tsx. handle disconnect/kick gracefully.
+- try to make the online page.tsx page for tic tac toe a global page that can be used for the other games like the lobby component
 - then do one of these two:
 1. add some more simple turn based games to have online play, they do not need local versions but can have them too if it works for the select game 
 2. create a universal lobby page that can be used for any game. have it take a game name param that it can inject into the lobby title. then the online page for the select game will handle connecting to the web socket on the right game and so on and so forth.

@@ -257,7 +257,7 @@ const tttLoop = async (socket, userId) => {
           // 2. end their socket connection. socket.onClose will handle removing them from states and lobbies.
           clients
             .get(data.payload.id)
-            .socket.close(1000, "Owner has removed you from the lobby");
+            .socket.close(4000, "You have been kicked from the lobby");
           // TODO: leave gamestate alone for now and set timer for the player to be able to join back
           break;
         }
