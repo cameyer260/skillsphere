@@ -50,6 +50,8 @@ export default function LobbyComponent({
     router.push("/protected/play/tic-tac-toe/online");
   };
 
+  // TODO
+  // handle this more gracefully
   const kickPlayer = (id: string): void => {
     socket.current?.send(
       JSON.stringify({ type: "kick_player", payload: { id: id } }),

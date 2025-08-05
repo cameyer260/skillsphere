@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { useGlobal } from "@/app/context/GlobalContext";
 import ErrorBanner from "@/components/error-message";
-import LobbyComponent from "./lobby-component";
+import LobbyComponent from "@/components/lobby-component";
 import GameComponent from "./game-component";
 
 export interface GameState {
@@ -220,8 +220,8 @@ function OnlinePageComponent() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (partyName.length > 25 || partyName.length === 0) {
-      alert("Party name must be between 1 and 25 characters");
+    if (partyName.length > 25 || partyName.length < 3) {
+      setLocalErr("Party name must be 3-25 characters long");
       return;
     }
     // first generate a code to insert
@@ -244,6 +244,10 @@ function OnlinePageComponent() {
         setLocalErr(
           "You were already in an existing lobby. We've removed you from it, so you're now free to create a new one.",
         );
+        return;
+      }
+      if (error.code === "23514") {
+        setLocalErr("Party name must be 3-25 characters long");
         return;
       }
       setLocalErr("There was an error creating the lobby. You may try again.");

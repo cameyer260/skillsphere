@@ -3,130 +3,66 @@
 import Link from "next/link";
 import Image from "next/image";
 import FriendsSidebar from "@/components/ui/friends-sidebar";
+import { useState } from "react";
+
+const localGames = ["pong", "tic-tac-toe"];
+const onlineGames = ["tic-tac-toe"];
 
 export default function Home() {
-	return (
-		<div>
-			<div className="flex flex-col sm:flex-row w-full min-h-screen">
-				<FriendsSidebar />
-				<div className="w-full sm:w-9/12 px-2 text-xl flex justify-center">
-					<div className="w-full">
-						<h1 className="text-3xl border-b border-b-foreground/30 py-2">
-							Top Games
-						</h1>
-						<div className="m-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 [&>div]:text-center [&>div]:border [&>div]:rounded-lg [&>div]:border-current [&>div]:py-2">
-							<div>
-								<Link href={"/protected/play/pong"}>
-									<Image
-										src={"/game-icons/pong/universal.png"}
-										width={512}
-										height={256}
-										alt="pong-icon"
-									/>
-									<p>Pong</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/tic-tac-toe"}>
-									<Image
-										src={
-											"/game-icons/tic-tac-toe/universal.png"
-										}
-										width={512}
-										height={256}
-										alt="tic-tac-toe-icon"
-									/>
-									<p>Tic Tac Toe</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/chess"}>
-									<Image
-										src={"/game-icons/chess/universal.png"}
-										width={512}
-										height={256}
-										alt="chess-icon"
-									/>
-									<p>Chess</p>
-								</Link>
-							</div>
-							{/* <div>
-								<Link href={"/protected/play/hangman"}>
-									<Image
-										src={
-											"/game-icons/hangman/universal.png"
-										}
-										width={512}
-										height={256}
-										alt="hangman-icon"
-									/>
-									<p>Hangman</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/snake"}>
-									<Image
-										src={"/game-icons/snake/universal.png"}
-										width={512}
-										height={256}
-										alt="snake-icon"
-									/>
-									<p>Snake</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/word"}>
-									<Image
-										src={"/game-icons/word/universal.png"}
-										width={512}
-										height={256}
-										alt="word-icon"
-									/>
-									<p>Word</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/sudoku"}>
-									<Image
-										src={"/game-icons/sudoku/universal.png"}
-										width={512}
-										height={256}
-										alt="sudoku-icon"
-									/>
-									<p>Sudoku</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/breakout"}>
-									<Image
-										src={
-											"/game-icons/breakout/universal.png"
-										}
-										width={512}
-										height={256}
-										alt="breakout-icon"
-									/>
-									<p>Breakout</p>
-								</Link>
-							</div>
-							<div>
-								<Link href={"/protected/play/space-invaders"}>
-									<Image
-										src={
-											"/game-icons/space-invaders/universal.png"
-										}
-										width={512}
-										height={256}
-										alt="space-invaders-icon"
-									/>
-									<p>Space Invaders</p>
-								</Link>
-							</div> */}
-						</div>
-					</div>
-				</div>
-			</div>
-			<footer className="text-center flex flex-col"></footer>
-		</div>
-	);
+  const [mode, setMode] = useState<"online" | "local">("online");
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row w-full min-h-screen">
+        <FriendsSidebar />
+        <div className="w-full sm:w-9/12 px-2 text-xl flex justify-center">
+          <div className="w-full">
+            <div className="text-3xl border-b border-b-foreground/30 py-2 pl-2">
+              <button
+                onClick={() => setMode(mode === "online" ? "local" : "online")}
+                className={`border-r border-r-foreground/30 pr-8 ${mode === "local" && "opacity-50"}`}
+              >
+                Online
+              </button>
+              <button
+                onClick={() => setMode(mode === "online" ? "local" : "online")}
+                className={`pl-8 ${mode === "online" && "opacity-50"}`}
+              >
+                Local
+              </button>
+            </div>
+            <div className="m-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 [&>div]:text-center [&>div]:border [&>div]:rounded-lg [&>div]:border-current [&>div]:py-2">
+              {mode === "local"
+                ? localGames.map((el, index) => (
+                    <div key={index}>
+                      <Link href={`/protected/play/${el}/local`}>
+                        <Image
+                          src={`/game-icons/${el}/universal.png`}
+                          width={512}
+                          height={256}
+                          alt={`${el}-icon`}
+                        />
+                      </Link>
+                      <p>{el[0].toUpperCase() + el.slice(1)}</p>
+                    </div>
+                  ))
+                : onlineGames.map((el, index) => (
+                    <div key={index}>
+                      <Link href={`/protected/play/${el}/online`}>
+                        <Image
+                          src={`/game-icons/${el}/universal.png`}
+                          width={512}
+                          height={256}
+                          alt={`${el}-icon`}
+                        />
+                      </Link>
+                      <p>{el[0].toUpperCase() + el.slice(1)}</p>
+                    </div>
+                  ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer className="text-center flex flex-col"></footer>
+    </div>
+  );
 }
