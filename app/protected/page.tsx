@@ -5,8 +5,8 @@ import Image from "next/image";
 import FriendsSidebar from "@/components/ui/friends-sidebar";
 import { useState } from "react";
 
-const localGames = ["pong", "tic-tac-toe"];
-const onlineGames = ["tic-tac-toe"];
+const localGames = ["pong", "tic-tac-toe", "connect-four"];
+const onlineGames = ["tic-tac-toe", "connect-four"];
 
 export default function Home() {
   const [mode, setMode] = useState<"online" | "local">("online");
@@ -31,33 +31,68 @@ export default function Home() {
               </button>
             </div>
             <div className="m-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 [&>div]:text-center [&>div]:border [&>div]:rounded-lg [&>div]:border-current [&>div]:py-2">
-              {mode === "local"
-                ? localGames.map((el, index) => (
-                    <div key={index}>
-                      <Link href={`/protected/play/${el}/local`}>
-                        <Image
-                          src={`/game-icons/${el}/universal.png`}
-                          width={512}
-                          height={256}
-                          alt={`${el}-icon`}
-                        />
-                      </Link>
-                      <p>{el[0].toUpperCase() + el.slice(1)}</p>
-                    </div>
-                  ))
-                : onlineGames.map((el, index) => (
-                    <div key={index}>
-                      <Link href={`/protected/play/${el}/online`}>
-                        <Image
-                          src={`/game-icons/${el}/universal.png`}
-                          width={512}
-                          height={256}
-                          alt={`${el}-icon`}
-                        />
-                      </Link>
-                      <p>{el[0].toUpperCase() + el.slice(1)}</p>
-                    </div>
-                  ))}
+              {mode === "local" ? (
+                <>
+                  <div>
+                    <Link href="/protected/play/tic-tac-toe/local">
+                      <Image
+                        src="/game-icons/tic-tac-toe/universal.png"
+                        width={512}
+                        height={256}
+                        alt="tic-tac-toe-icon"
+                      />
+                    </Link>
+                    <p>Tic-Tac-Toe</p>
+                  </div>
+                  <div>
+                    <Link href="/protected/play/pong/local">
+                      <Image
+                        src="/game-icons/pong/universal.png"
+                        width={512}
+                        height={256}
+                        alt="pong-icon"
+                      />
+                    </Link>
+                    <p>Pong</p>
+                  </div>
+                  <div>
+                    <Link href="/protected/play/connect-four/local">
+                      <Image
+                        src="/game-icons/connect-four/universal.png"
+                        width={512}
+                        height={256}
+                        alt="connect-four-icon"
+                      />
+                    </Link>
+                    <p>Connect Four</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Link href="/protected/play/tic-tac-toe/online">
+                      <Image
+                        src="/game-icons/tic-tac-toe/universal.png"
+                        width={512}
+                        height={256}
+                        alt="tic-tac-toe-icon"
+                      />
+                    </Link>
+                    <p>Tic-Tac-Toe</p>
+                  </div>
+                  <div>
+                    <Link href="/protected/play/connect-four/online">
+                      <Image
+                        src="/game-icons/connect-four/universal.png"
+                        width={512}
+                        height={256}
+                        alt="connect-four-icon"
+                      />
+                    </Link>
+                    <p>Connect Four</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

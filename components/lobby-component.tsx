@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import CodeMessage from "@/components/code-message";
 import CopyButton from "@/components/ui/copy-button";
+import { Game } from "@/types/game";
 
 export default function LobbyComponent({
   isOwner,
@@ -15,6 +16,7 @@ export default function LobbyComponent({
   lobbyName,
   players,
   code,
+  game,
 }: {
   isOwner: boolean | null;
   socket: React.MutableRefObject<WebSocket | null>;
@@ -25,6 +27,7 @@ export default function LobbyComponent({
     | { username: string; id: string; owner: boolean; avatarIndex: number }[]
     | null;
   code: string | null;
+  game: Game;
 }) {
   const { user } = useGlobal();
   const [mounted, setMounted] = useState(false);
@@ -50,8 +53,6 @@ export default function LobbyComponent({
     router.push("/protected/play/tic-tac-toe/online");
   };
 
-  // TODO
-  // handle this more gracefully
   const kickPlayer = (id: string): void => {
     socket.current?.send(
       JSON.stringify({ type: "kick_player", payload: { id: id } }),
@@ -59,7 +60,7 @@ export default function LobbyComponent({
   };
 
   if (!user) {
-    router.push("/protected/play/tic-tac-toe/online");
+    router.push(`/protected/play/${game}/online`);
     setError("Please logout and log back in and try rejoining the lobby");
   }
 

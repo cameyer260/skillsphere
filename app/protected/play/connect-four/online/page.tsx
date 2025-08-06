@@ -6,13 +6,13 @@ import { createClient } from "@/utils/supabase/client";
 import { useGlobal } from "@/app/context/GlobalContext";
 import ErrorBanner from "@/components/error-message";
 import LobbyComponent from "@/components/lobby-component";
-import GameComponent from "./game-component";
+import GameComponent from "../game-component";
 
 export interface GameState {
   board: string[][];
-  o: string;
-  x: string;
-  turn: "o" | "x";
+  red: string;
+  yellow: string;
+  turn: "red" | "yellow";
   gameWon: string | null;
   draw: boolean;
 }
@@ -78,8 +78,8 @@ function OnlinePageComponent() {
         // now that they are successfully added to the lobby as the owner or a player, we can establish a web socket connection
         const ws = new WebSocket(
           process.env.NODE_ENV === "development"
-            ? `ws://localhost:8080?token=${accessToken}&game=tic-tac-toe&lobby_code=${lobbyCode}`
-            : `wss://ws.playskillsphere.com?token=${accessToken}&game=tic-tac-toe&lobby_code=${lobbyCode}`,
+            ? `ws://localhost:8080?token=${accessToken}&game=connect-four&lobby_code=${lobbyCode}`
+            : `wss://ws.playskillsphere.com?token=${accessToken}&game=connect-four&lobby_code=${lobbyCode}`,
         );
 
         socketRef.current = ws;
@@ -158,18 +158,18 @@ function OnlinePageComponent() {
           console.log("Disconnected", event.code, event.reason);
           switch (event.code) {
             case 1000:
-              router.push(`/protected/play/tic-tac-toe/online`);
+              router.push(`/protected/play/connect-four/online`);
               break;
             case 1008:
               router.push(
-                `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                `/protected/play/connect-four/online?error=${encodeURIComponent(
                   event.reason,
                 )}`,
               );
               break;
             case 4000:
               router.push(
-                `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                `/protected/play/connect-four/online?error=${encodeURIComponent(
                   event.reason,
                 )}`,
               );
@@ -177,14 +177,14 @@ function OnlinePageComponent() {
             default:
               if (event.reason) {
                 router.push(
-                  `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                  `/protected/play/connect-four/online?error=${encodeURIComponent(
                     event.reason,
                   )}`,
                 );
                 return;
               }
               router.push(
-                `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+                `/protected/play/connect-four/online?error=${encodeURIComponent(
                   "Disconnected from lobby unexpectedly.",
                 )}`,
               );
@@ -197,7 +197,7 @@ function OnlinePageComponent() {
             socketRef.current?.readyState !== WebSocket.CLOSED
           ) {
             router.push(
-              `/protected/play/tic-tac-toe/online${encodeURIComponent("Error connecting to lobby.")}`,
+              `/protected/play/connect-four/online${encodeURIComponent("Error connecting to lobby.")}`,
             );
             return;
           }
@@ -207,7 +207,7 @@ function OnlinePageComponent() {
         console.log(error);
         if (error instanceof Error) {
           router.push(
-            `/protected/play/tic-tac-toe/online?error=${encodeURIComponent(
+            `/protected/play/connect-four/online?error=${encodeURIComponent(
               error.message,
             )}`,
           );
@@ -229,7 +229,7 @@ function OnlinePageComponent() {
       alert("Code is 7 characters long");
       return;
     }
-    router.push(`/protected/play/tic-tac-toe/online?code=${code}`);
+    router.push(`/protected/play/connect-four/online?code=${code}`);
   };
 
   const genCode = (): string => {
@@ -254,7 +254,7 @@ function OnlinePageComponent() {
     // try creating the lobby in public.lobbies
     const { error } = await supabase.from("lobbies").insert({
       owner: user.id,
-      game: "Tic-Tac-Toe",
+      game: "Connect Four",
       code: cd,
       lobby_name: partyName,
     });
