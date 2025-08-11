@@ -81,6 +81,7 @@ const cfLoop = async (socket, userId) => {
         }
       }
     }
+
     // then check for vertical win (by column)
     for (let col = 0; col < 7; col++) {
       for (let i = 0; i < 3; i++) {
@@ -95,6 +96,7 @@ const cfLoop = async (socket, userId) => {
         }
       }
     }
+
     // then check for diagonal win. first check bottom left to top right, then top left to bottom right.
     // bottom left to top right can be split into 2 sections.
     // first, bottom left as origin and moving it to the right.
@@ -150,7 +152,7 @@ const cfLoop = async (socket, userId) => {
       if (or === 4) {
         for (let startDelta = 0; startDelta < 2; startDelta++) {
           let allMatch = true;
-          for (let i = 0; i < 4; i++) {
+          for (let i = 1; i < 4; i++) {
             if (
               gameState.board[or - startDelta][0 + startDelta] !==
               gameState.board[or - startDelta - i][0 + startDelta + i]
@@ -166,11 +168,80 @@ const cfLoop = async (socket, userId) => {
         }
       } else if (or === 3) {
         let allMatch = true;
-        for (let i = 0; i < 4; i++) {
+        for (let i = 1; i < 4; i++) {
           if (gameState.board[or][0] !== gameState.board[or - i][0 + i])
             allMatch = false;
           if (allMatch && gameState.board[or][0]) {
             gameState.gameWon = mapPlayer(gameState.board[or][0]);
+            return;
+          }
+        }
+      }
+    }
+
+    // now check top left to bottom right
+    // split into two sections: 1. origin moving right; 2. origin moving down
+    for (let or = 0; or < 4; or++) {
+      if (or === 0 || or === 1) {
+        for (let startDelta = 0; startDelta < 3; startDelta++) {
+          let allMatch = true;
+          for (let i = 1; i < 4; i++) {
+            if (
+              gameState.board[or + startDelta][startDelta] !==
+              gameState.board[or + startDelta + i][startDelta + i]
+            )
+              allMatch = false;
+            if (allMatch && gameState.board[or + startDelta][startDelta]) {
+              gameState.gameWon = mapPlayer(
+                gameState.board[or + startDelta][startDelta],
+              );
+              return;
+            }
+          }
+        }
+      } else if (or === 2) {
+        for (let startDelta = 0; startDelta < 2; startDelta++) {
+          let allMatch = true;
+          for (let i = 1; i < 4; i++) {
+            if (
+              gameState.board[or + startDelta][startDelta] !==
+              gameState.board[or + startDelta + i][startDelta + i]
+            )
+              allMatch = false;
+            if (allMatch && gameState.board[or + startDelta][startDelta]) {
+              gameState.gameWon = mapPlayer(
+                gameState.board[or + startDelta][startDelta],
+              );
+              return;
+            }
+          }
+        }
+      } else if (or === 3) {
+        let allMatch = true;
+        for (let i = 1; i < 4; i++) {
+          if (gameState.board[or][0] !== gameState.board[or + i][0 + i])
+            allMatch = false;
+          if (allMatch && gameState.board[or][0]) {
+            gameState.gameWon = mapPlayer(gameState.board[or][0]);
+            return;
+          }
+        }
+      }
+    }
+    // now for origin moving down
+    for (let or = 1; or < 3; or++) {
+      for (let startDelta = 0; startDelta < 2; startDelta++) {
+        let allMatch = true;
+        for (let i = 1; i < 4; i++) {
+          if (
+            gameState.board[or + startDelta][startDelta] !==
+            gameState.board[or + startDelta + i][startDelta + i]
+          )
+            allMatch = false;
+          if (allMatch && gameState.board[or + startDelta][startDelta]) {
+            gameState.gameWon = mapPlayer(
+              gameState.board[or + startDelta][startDelta],
+            );
             return;
           }
         }
