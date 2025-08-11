@@ -227,12 +227,10 @@ const tttLoop = async (socket, userId) => {
           }
 
           // 3. at this point we have a success, we check for gamewon and send back a success message to all players of the lobby informing them of the new move. we send our updated gameState back to them.
-          // const newGs = JSON.parse(JSON.stringify(gameState));
           gameState.board[data.payload.r][data.payload.c] = gameState.turn;
           gameState.turn === "x"
             ? (gameState.turn = "o")
             : (gameState.turn = "x");
-          // gameStates.set(lobbyId, newGs);
           tttGameWon(gameState); // will either return the id of the user who won or null if no one has won yet
           const players = getPlayersInLobby(userId);
           for (const player of players) {
