@@ -41,6 +41,8 @@ function OnlinePageComponent() {
   const [cd, setCd] = useState<string | null>(null); // variables that will hold the code gotten from out ws connection and passed down to lobby component
   const [gameInProgress, setGameInProgress] = useState<boolean>(false);
   const [localGameState, setLocalGameState] = useState<GameState | null>(null);
+  const [endGame, setEndGame] = useState<boolean>(false);
+  const [wonMessage, setWonMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const errorParam = searchParams.get("error");
@@ -56,6 +58,11 @@ function OnlinePageComponent() {
       JSON.stringify({ type: "move", payload: { r: r, c: c } }),
     );
     return null;
+  };
+
+  const leaveGame = () => {
+    socketRef.current?.close(1000, "Player has left the game.");
+    router.push("/protected");
   };
 
   useEffect(() => {
@@ -135,6 +142,8 @@ function OnlinePageComponent() {
               break;
             case "start_game":
               setGameInProgress(true);
+              setEndGame(false);
+              setWonMessage(null);
               const gs = message.payload.gameState;
               setLocalGameState(gs);
               break;
@@ -297,6 +306,11 @@ function OnlinePageComponent() {
         localErr={localErr}
         setLocalErr={setLocalErr}
         backToLobby={backToLobby}
+        endGame={endGame}
+        wonMessage={wonMessage}
+        setEndGame={setEndGame}
+        setWonMessage={setWonMessage}
+        leaveGame={leaveGame}
       />
     );
 

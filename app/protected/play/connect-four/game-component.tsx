@@ -15,6 +15,11 @@ export default function GameComponent({
   localErr,
   setLocalErr,
   backToLobby,
+  endGame,
+  wonMessage,
+  setEndGame,
+  setWonMessage,
+  leaveGame,
 }: {
   handleClick: (r: number, c: number) => string | null;
   localGameState: GameState | null;
@@ -22,6 +27,11 @@ export default function GameComponent({
   localErr: string | null;
   setLocalErr: Dispatch<SetStateAction<string | null>>;
   backToLobby: () => void;
+  endGame: boolean;
+  wonMessage: string | null;
+  setEndGame: React.Dispatch<React.SetStateAction<boolean>>;
+  setWonMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  leaveGame: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
   const { theme, resolvedTheme } = useTheme();
@@ -31,8 +41,7 @@ export default function GameComponent({
   const lightMode = mounted && (theme === "light" || resolvedTheme === "light");
   const { user } = useGlobal();
   if (!lobbyPlayers || !localGameState) return;
-  const [endGame, setEndGame] = useState<boolean>(false);
-  const [wonMessage, setWonMessage] = useState<string | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -60,33 +69,40 @@ export default function GameComponent({
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] p-4">
       {localErr && <ErrorBanner message={localErr} />}
-      <div className="h-16 border-b border-b-foreground/30 flex justify-center gap-6 text-3xl pb-4">
-        <div
-          className={`flex items-center gap-4 ${localGameState[localGameState.turn] === user?.id && "bg-green-500"}`}
-        >
-          <h1>{user?.username}</h1>
-          <Image
-            src={`/account-page/avatar-icons/${user?.avatar_index === 0 ? (lightMode ? user?.avatar_index + "b" : user?.avatar_index + "w") : user?.avatar_index}.png`}
-            alt="Profile Picture"
-            width={50}
-            height={50}
-            className="rounded-full"
-          />
+      <div className="relative h-16 border-b-2 border-b-foreground/30 flex justify-center gap-6 text-3xl pb-4">
+        <div className="absolute left-1/2 flex transform -translate-x-1/2">
+          <div
+            className={`flex items-center gap-4 ${localGameState[localGameState.turn] === user?.id && "bg-green-500"}`}
+          >
+            <h1>{user?.username}</h1>
+            <Image
+              src={`/account-page/avatar-icons/${user?.avatar_index === 0 ? (lightMode ? user?.avatar_index + "b" : user?.avatar_index + "w") : user?.avatar_index}.png`}
+              alt="Profile Picture"
+              width={50}
+              height={50}
+              className="rounded-full"
+            />
+          </div>
+          <div className="flex items-center">
+            <h1>vs.</h1>
+          </div>
+          <div
+            className={`flex items-center gap-4 ${localGameState[localGameState.turn] === lobbyPlayers[0]?.id && "bg-green-500"}`}
+          >
+            <h1>{lobbyPlayers[0].username}</h1>
+            <Image
+              src={`/account-page/avatar-icons/${lobbyPlayers[0].avatarIndex === 0 ? (lightMode ? lobbyPlayers[0].avatarIndex + "b" : lobbyPlayers[0].avatarIndex + "w") : lobbyPlayers[0].avatarIndex}.png`}
+              alt="Profile Picture"
+              width={50}
+              height={50}
+              className="rounded-full"
+            />
+          </div>
         </div>
-        <div className="flex items-center">
-          <h1>vs.</h1>
-        </div>
-        <div
-          className={`flex items-center gap-4 ${localGameState[localGameState.turn] === lobbyPlayers[0]?.id && "bg-green-500"}`}
-        >
-          <h1>{lobbyPlayers[0].username}</h1>
-          <Image
-            src={`/account-page/avatar-icons/${lobbyPlayers[0].avatarIndex === 0 ? (lightMode ? lobbyPlayers[0].avatarIndex + "b" : lobbyPlayers[0].avatarIndex + "w") : lobbyPlayers[0].avatarIndex}.png`}
-            alt="Profile Picture"
-            width={50}
-            height={50}
-            className="rounded-full"
-          />
+        <div className="ml-auto mr-4 border-2 border-foreground/30 rounded-lg px-2">
+          <button onClick={leaveGame}>
+            Leave
+          </button>
         </div>
       </div>
       <div>

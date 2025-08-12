@@ -17,8 +17,8 @@ export default function GameBoard({
       <div className="inline-grid grid-cols-7">
         {localGameState?.board.map((row, rIndex) => (
           <Fragment key={rIndex}>
-            {row.map((char, cIndex) => (
-              <GameTile char={char} isLightMode={isLightMode} key={cIndex} r={rIndex} c={cIndex} handleClick={handleClick}/>
+            {row.map((color, cIndex) => (
+              <GameTile color={color} isLightMode={isLightMode} key={cIndex} r={rIndex} c={cIndex} handleClick={handleClick}/>
             ))}
           </Fragment>
         ))}
