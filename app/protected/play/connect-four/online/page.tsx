@@ -260,7 +260,7 @@ function OnlinePageComponent() {
     });
     // on success forward them to the same page with ?code=... where they should be shown the lobby component and have admin privelages
     if (!error) {
-      router.push(`/protected/play/tic-tac-toe/online?code=${cd}`);
+      router.push(`/protected/play/connect-four/online?code=${cd}`);
       return;
     } else {
       console.log(error);
@@ -309,7 +309,7 @@ function OnlinePageComponent() {
       lobbyName={lobbyName}
       players={lobbyPlayers}
       code={cd}
-      game={"tic-tac-toe"}
+      game={"connect-four"}
     />
   ) : (
     <div className="flex flex-col w-full h-[calc(100vh-4rem)] items-center">

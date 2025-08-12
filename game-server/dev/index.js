@@ -41,19 +41,20 @@ const cfLoop = async (socket, userId) => {
    * @returns the string id of the player.
    */
   const mapPlayer = (playerColor, gameState) => {
-    return playerColor === "x" ? gameState.red : gameState.yellow;
+    // in connect four, the players are "red" and "yellow"
+    return playerColor === "red" ? gameState.red : gameState.yellow;
   };
 
   const validateMove = (gameState, row, column) => {
     // first run some basic checks for row and column being in range and gameState not null
-    if (!gameState || row < 0 || row > 6 || column < 0 || column > 7)
+    if (!gameState || row < 0 || row > 5 || column < 0 || column > 6)
       return false;
 
     // second make sure the spot on the board is open
     if (gameState.board[row][column]) return false;
 
-    // third make sure there is a piece under it
-    if (!gameState.board[row - 1][column]) return false;
+    // third make sure there is a piece under it or it's the bottom row (row 5)
+    if (row < 5 && !gameState.board[row + 1][column]) return false;
 
     // all tests passed, move is approved
     return true;
@@ -65,183 +66,35 @@ const cfLoop = async (socket, userId) => {
    * @returns nothing
    */
   const cfGameWon = (gameState) => {
-    if (!gameState) return;
+    if (!gameState || !gameState.board) return;
 
-    // first check for horizontal win (by row)
-    for (let row = 0; row < 6; row++) {
-      for (let i = 0; i < 4; i++) {
-        let allMatch = true;
-        for (let ii = i + 1; ii < i + 3; ii++) {
-          if (gameState.board[row][ii] !== gameState.board[row][i])
-            allMatch = false;
-        }
-        if (allMatch) {
-          gameState.gameWon = mapPlayer(gameState.board[row][i], gameState);
-          return;
-        }
-      }
-    }
+    const rows = gameState.board.length;
+    const cols = gameState.board[0].length;
 
-    // then check for vertical win (by column)
-    for (let col = 0; col < 7; col++) {
-      for (let i = 0; i < 3; i++) {
-        let allMatch = true;
-        for (let ii = i + 1; ii < i + 3; ii++) {
-          if (gameState.board[ii][col] !== gameState.board[i][col])
-            allMatch = false;
-        }
-        if (allMatch) {
-          gameState.gameWon = mapPlayer(gameState.board[i][col], gameState);
-          return;
-        }
-      }
-    }
+    const directions = [
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [1, -1],
+    ];
 
-    // then check for diagonal win. first check bottom left to top right, then top left to bottom right.
-    // bottom left to top right can be split into 2 sections.
-    // first, bottom left as origin and moving it to the right.
-    for (let or = 0; or < 4; or++) {
-      if (or === 0 || or === 1) {
-        for (let startDelta = 0; startDelta < 3; startDelta++) {
-          let allMatch = true;
-          for (let i = 1; i < 4; i++) {
-            if (
-              gameState.board[5 - startDelta][or + startDelta] !==
-              gameState.board[5 - startDelta - i][or + startDelta + i]
-            )
-              allMatch = false;
-          }
-          if (allMatch && gameState.board[5 - startDelta][or + startDelta]) {
-            gameState.gameWon = mapPlayer(
-              gameState.board[5 - startDelta][or + startDelta],
-            );
-            return;
-          }
-        }
-      } else if (or === 2) {
-        for (let startDelta = 0; startDelta < 2; startDelta++) {
-          let allMatch = true;
-          for (let i = 1; i < 4; i++) {
-            if (
-              gameState.board[5 - startDelta][or + startDelta] !==
-              gameState.board[5 - startDelta - i][or + startDelta + i]
-            )
-              allMatch = false;
-          }
-          if (allMatch && gameState.board[5 - startDelta][or + startDelta]) {
-            gameState.gameWon = mapPlayer(
-              gameState.board[5 - startDelta][or + startDelta],
-            );
-            return;
-          }
-        }
-      } else if (or === 3) {
-        let allMatch = true;
-        for (let i = 1; i < 4; i++) {
-          if (gameState.board[5][3] !== gameState.board[5 - i][3 + i])
-            allMatch = false;
-          if (allMatch && gameState.board[5][3]) {
-            gameState.gameWon = mapPlayer(gameState.board[5][3]);
-            return;
-          }
-        }
-      }
-    }
-    // then, bottom left as origin, and moving it upward.
-    for (let or = 4; or > 2; or--) {
-      if (or === 4) {
-        for (let startDelta = 0; startDelta < 2; startDelta++) {
-          let allMatch = true;
-          for (let i = 1; i < 4; i++) {
-            if (
-              gameState.board[or - startDelta][0 + startDelta] !==
-              gameState.board[or - startDelta - i][0 + startDelta + i]
-            )
-              allMatch = false;
-            if (allMatch && gameState.board[or - startDelta][0 + startDelta]) {
-              gameState.gameWon = mapPlayer(
-                gameState.board[or - startDelta][0 + startDelta],
-              );
-              return;
-            }
-          }
-        }
-      } else if (or === 3) {
-        let allMatch = true;
-        for (let i = 1; i < 4; i++) {
-          if (gameState.board[or][0] !== gameState.board[or - i][0 + i])
-            allMatch = false;
-          if (allMatch && gameState.board[or][0]) {
-            gameState.gameWon = mapPlayer(gameState.board[or][0]);
-            return;
-          }
-        }
-      }
-    }
+    const inBounds = (r, c) => r >= 0 && r < rows && c >= 0 && c < cols;
 
-    // now check top left to bottom right
-    // split into two sections: 1. origin moving right; 2. origin moving down
-    for (let or = 0; or < 4; or++) {
-      if (or === 0 || or === 1) {
-        for (let startDelta = 0; startDelta < 3; startDelta++) {
-          let allMatch = true;
-          for (let i = 1; i < 4; i++) {
-            if (
-              gameState.board[or + startDelta][startDelta] !==
-              gameState.board[or + startDelta + i][startDelta + i]
-            )
-              allMatch = false;
-            if (allMatch && gameState.board[or + startDelta][startDelta]) {
-              gameState.gameWon = mapPlayer(
-                gameState.board[or + startDelta][startDelta],
-              );
-              return;
-            }
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const color = gameState.board[r][c];
+        if (!color) continue;
+
+        for (const [dr, dc] of directions) {
+          // check the next 3 cells in the direction (total run of 4)
+          let k = 1;
+          for (; k < 4; k++) {
+            const nr = r + dr * k;
+            const nc = c + dc * k;
+            if (!inBounds(nr, nc) || gameState.board[nr][nc] !== color) break;
           }
-        }
-      } else if (or === 2) {
-        for (let startDelta = 0; startDelta < 2; startDelta++) {
-          let allMatch = true;
-          for (let i = 1; i < 4; i++) {
-            if (
-              gameState.board[or + startDelta][startDelta] !==
-              gameState.board[or + startDelta + i][startDelta + i]
-            )
-              allMatch = false;
-            if (allMatch && gameState.board[or + startDelta][startDelta]) {
-              gameState.gameWon = mapPlayer(
-                gameState.board[or + startDelta][startDelta],
-              );
-              return;
-            }
-          }
-        }
-      } else if (or === 3) {
-        let allMatch = true;
-        for (let i = 1; i < 4; i++) {
-          if (gameState.board[or][0] !== gameState.board[or + i][0 + i])
-            allMatch = false;
-          if (allMatch && gameState.board[or][0]) {
-            gameState.gameWon = mapPlayer(gameState.board[or][0]);
-            return;
-          }
-        }
-      }
-    }
-    // now for origin moving down
-    for (let or = 1; or < 3; or++) {
-      for (let startDelta = 0; startDelta < 2; startDelta++) {
-        let allMatch = true;
-        for (let i = 1; i < 4; i++) {
-          if (
-            gameState.board[or + startDelta][startDelta] !==
-            gameState.board[or + startDelta + i][startDelta + i]
-          )
-            allMatch = false;
-          if (allMatch && gameState.board[or + startDelta][startDelta]) {
-            gameState.gameWon = mapPlayer(
-              gameState.board[or + startDelta][startDelta],
-            );
+          if (k === 4) {
+            gameState.gameWon = mapPlayer(color, gameState);
             return;
           }
         }

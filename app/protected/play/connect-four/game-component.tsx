@@ -2,10 +2,11 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { useGlobal } from "@/app/context/GlobalContext";
-import { LobbyPlayer, GameState  } from "./online/page";
+import { LobbyPlayer, GameState } from "./online/page";
 import ErrorBanner from "@/components/error-message";
 import type { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
+import GameBoard from "./game-board";
 
 export default function GameComponent({
   handleClick,
@@ -50,8 +51,7 @@ export default function GameComponent({
       );
     }
   }, [localGameState.gameWon, localGameState.draw]);
-  
-  
+
   const backToHome = () => {
     // just router.push to home
     router.push("/protected");
@@ -90,12 +90,21 @@ export default function GameComponent({
         </div>
       </div>
       <div>
+        <GameBoard
+          isLightMode={lightMode}
+          handleClick={handleClick}
+          localGameState={localGameState}
+        />
       </div>
       {endGame && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 flex-col text-4xl gap-4">
           <h1>{wonMessage}</h1>
-          <button onClick={backToLobby} className="border-2 rounded-lg px-2">Back to The Lobby</button>
-          <button onClick={backToHome} className="border-2 rounded-lg px-2">Back to Home</button>
+          <button onClick={backToLobby} className="border-2 rounded-lg px-2">
+            Back to The Lobby
+          </button>
+          <button onClick={backToHome} className="border-2 rounded-lg px-2">
+            Back to Home
+          </button>
         </div>
       )}
     </div>

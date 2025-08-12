@@ -50,7 +50,7 @@ export default function LobbyComponent({
   // HANDLE THAT ON THE VPS, NOTIFY OTHER PLAYERS AND PAUSE GAME OR WHATEVER
   const exitLobby = async () => {
     socket.current?.close(1000, "User leaving lobby");
-    router.push("/protected/play/tic-tac-toe/online");
+    router.push(`/protected/play/${game}/online`);
   };
 
   const kickPlayer = (id: string): void => {
