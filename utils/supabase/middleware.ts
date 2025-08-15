@@ -39,7 +39,16 @@ export const updateSession = async (request: NextRequest) => {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const publicPaths = ["/sign-in", "/sign-up", "/about", "/privacy-policy", "/", "/terms-of-service"];
+  const publicPaths = [
+    "/sign-in",
+    "/sign-up",
+    "/about",
+    "/privacy-policy",
+    "/",
+    "/terms-of-service",
+    "/protected/play/tic-tac-toe/online",
+    "/protected/play/connect-four/online",
+  ];
   const isPublic = publicPaths.includes(pathname);
 
   // if they are not logged in and they are not on the about or sign in or sign up page forward them to the sign in page
