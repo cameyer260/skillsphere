@@ -51,6 +51,11 @@ function OnlinePageComponent() {
     } else if (!lobbyCode) {
       setLocalErr(null);
     }
+    const a = setTimeout(() => {
+      setLocalErr(null);
+    }, 5000);
+
+    return () => clearTimeout(a);
   }, [lobbyCode, searchParams]);
 
   const handleClick = (r: number, c: number) => {
@@ -170,33 +175,17 @@ function OnlinePageComponent() {
               router.push(`/protected/play/connect-four/online`);
               break;
             case 1008:
-              router.push(
-                `/protected/play/connect-four/online?error=${encodeURIComponent(
-                  event.reason,
-                )}`,
-              );
+              setLocalErr(event.reason);
               break;
             case 4000:
-              router.push(
-                `/protected/play/connect-four/online?error=${encodeURIComponent(
-                  event.reason,
-                )}`,
-              );
+              setLocalErr(event.reason);
               break;
             default:
               if (event.reason) {
-                router.push(
-                  `/protected/play/connect-four/online?error=${encodeURIComponent(
-                    event.reason,
-                  )}`,
-                );
+                setLocalErr(event.reason);
                 return;
               }
-              router.push(
-                `/protected/play/connect-four/online?error=${encodeURIComponent(
-                  "Disconnected from lobby unexpectedly.",
-                )}`,
-              );
+              setLocalErr("Disconnected from lobby unexpectedly.");
               return;
           }
         };
@@ -205,9 +194,7 @@ function OnlinePageComponent() {
             socketRef.current?.readyState !== WebSocket.CLOSING &&
             socketRef.current?.readyState !== WebSocket.CLOSED
           ) {
-            router.push(
-              `/protected/play/connect-four/online${encodeURIComponent("Error connecting to lobby.")}`,
-            );
+            setLocalErr("Error connecting to lobby.");
             return;
           }
         };
@@ -215,11 +202,7 @@ function OnlinePageComponent() {
       } catch (error) {
         console.log(error);
         if (error instanceof Error) {
-          router.push(
-            `/protected/play/connect-four/online?error=${encodeURIComponent(
-              error.message,
-            )}`,
-          );
+          setLocalErr(error.message);
           return;
         }
       }
