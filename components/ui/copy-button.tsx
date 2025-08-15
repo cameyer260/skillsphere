@@ -16,7 +16,7 @@ export default function CopyButton({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(
-        `https://playskillsphere.com/protected/play/${game}/online?code=${code}`,
+        `${window.location.origin}/protected/play/${game}/online?code=${code}`,
       );
       setCopied(true);
     } catch (err) {
