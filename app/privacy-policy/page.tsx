@@ -138,7 +138,7 @@ export default function PrivacyPolicy() {
             <Link href="/about" className="hover:underline">
               About
             </Link>
-            <Link href="/terms" className="hover:underline">
+            <Link href="/terms-of-service" className="hover:underline">
               Terms of Service
             </Link>
           </div>

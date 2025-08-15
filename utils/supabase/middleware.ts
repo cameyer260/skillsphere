@@ -46,8 +46,10 @@ export const updateSession = async (request: NextRequest) => {
     "/privacy-policy",
     "/",
     "/terms-of-service",
-    "/protected/play/tic-tac-toe/online",
-    "/protected/play/connect-four/online",
+    "/protected/play/pong",
+    "/protected/play/tic-tac-toe/local",
+    "/protected/play/chess",
+    "/protected/play/connect-four/local"
   ];
   const isPublic = publicPaths.includes(pathname);
 
