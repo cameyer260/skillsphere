@@ -4,7 +4,4 @@
 - make this whole site publicly accessible. delay requiring sign-in/sign-up for as long as possible
 - finish friends search method
 
-- IMMEDIATELY FIX THIS FIRST*****************
-- make tic tac toe online page and lobby component both universal for all games. just take in params for what game it is.
-- then do one of these two:
-1. add some more simple turn based games to have online play, they do not need local versions but can have them too if it works for the select game 
+- MAKE ABOUT PAGE LOOK GOOD

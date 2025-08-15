@@ -1,19 +1,22 @@
+import { Game } from "@/types/game";
 import Image from "next/image";
 import { useState } from "react";
 
 export default function CopyButton({
   lightMode,
   code,
+  game,
 }: {
   lightMode: boolean;
   code: string | null;
+  game: Game;
 }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(
-        `https://playskillsphere.com/protected/play/tic-tac-toe/online?code=${code}`,
+        `https://playskillsphere.com/protected/play/${game}/online?code=${code}`,
       );
       setCopied(true);
     } catch (err) {

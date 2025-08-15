@@ -74,7 +74,7 @@ export default function LobbyComponent({
       <div className="flex justify-center mt-6 text-2xl">
         <div className="absolute left-6 flex gap-4">
           <h1>Lobby Code: {code}</h1>
-          <CopyButton lightMode={lightMode} code={code} />
+          <CopyButton lightMode={lightMode} code={code} game={game} />
         </div>
         <h1 className="text-center text-4xl">{lobbyName}</h1>
         <div className="absolute right-6 flex gap-4">
