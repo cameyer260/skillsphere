@@ -9,7 +9,7 @@ import LobbyComponent from "@/components/lobby-component";
 import GameComponent from "../game-component";
 
 export interface GameState {
-  board: string[][];
+  board: (string | null)[][];
   red: string;
   yellow: string;
   turn: "red" | "yellow";

@@ -45,7 +45,7 @@ export default function Home() {
                     <p>Tic-Tac-Toe</p>
                   </div>
                   <div>
-                    <Link href="/protected/play/pong/local">
+                    <Link href="/protected/play/pong">
                       <Image
                         src="/game-icons/pong/universal.png"
                         width={512}
