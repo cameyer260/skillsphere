@@ -1,20 +1,9 @@
-import https from "https";
-import fs from "fs";
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer } from "ws";
 import { URL } from "url";
 import { createClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
-const server = https.createServer({
-  cert: fs.readFileSync(
-    "/etc/letsencrypt/live/ws.playskillsphere.com/fullchain.pem",
-  ),
-  key: fs.readFileSync(
-    "/etc/letsencrypt/live/ws.playskillsphere.com/privkey.pem",
-  ),
-});
-
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ port: 3003 });
 
 /**
  * starts the connect four game loop, sends data back and forth between the two players
@@ -753,8 +742,4 @@ wss.on("connection", async (socket, req) => {
       }
     }
   });
-});
-
-server.listen(443, () => {
-  console.log("HTTPS + WSS server running on port 443");
 });
