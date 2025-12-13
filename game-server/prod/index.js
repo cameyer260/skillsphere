@@ -3,7 +3,7 @@ import { URL } from "url";
 import { createClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
-const wss = new WebSocketServer({ port: 3003 });
+const wss = new WebSocketServer({ port: 3000 });
 
 /**
  * starts the connect four game loop, sends data back and forth between the two players
